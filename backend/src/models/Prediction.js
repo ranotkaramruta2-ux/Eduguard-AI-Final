@@ -22,6 +22,10 @@ const predictionSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Recommendation is required'],
     },
+    riskFactors: {
+      type: [String],
+      default: [],
+    },
     predictionDate: {
       type: Date,
       default: Date.now,

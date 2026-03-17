@@ -73,6 +73,15 @@ export default function RunPredictionPage() {
                 {s.recommendation && (
                   <p className="text-xs text-muted-foreground mt-1 italic">{s.recommendation}</p>
                 )}
+                {s.riskFactors && s.riskFactors.length > 0 && s.riskFactors[0] !== 'No significant risk factors detected' && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {s.riskFactors.map((f, i) => (
+                      <span key={i} className="text-xs bg-destructive/10 text-destructive px-1.5 py-0.5 rounded">
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 {s.riskLevel ? (

@@ -80,10 +80,10 @@ export const authAPI = {
       body: JSON.stringify({ email, password }),
     }),
 
-  register: (name: string, email: string, password: string, role: string, phoneNumber?: string) =>
+  register: (name: string, email: string, password: string, role: string, phoneNumber?: string, expertise?: string) =>
     apiFetch<RegisterResponse>('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password, role, phoneNumber }),
+      body: JSON.stringify({ name, email, password, role, phoneNumber, expertise }),
     }),
 
   logout: () =>
@@ -117,6 +117,7 @@ export interface StudentData {
   riskScore?: number;
   riskLevel?: 'low' | 'medium' | 'high';
   recommendation?: string;
+  riskFactors?: string[];
   teacherId?: any;
   userId?: any;
   counselorId?: any;
@@ -130,6 +131,7 @@ export interface CounselorUser {
   email: string;
   phoneNumber?: string;
   role: string;
+  expertise?: 'academic' | 'financial' | 'behavioral' | 'general';
 }
 
 export interface StudentUserSummary {
@@ -199,6 +201,7 @@ export interface PredictionResult {
   riskScore: number;
   riskLevel: 'low' | 'medium' | 'high';
   recommendation: string;
+  riskFactors?: string[];
   source: string;
 }
 

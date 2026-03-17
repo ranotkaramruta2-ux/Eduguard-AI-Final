@@ -10,7 +10,7 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, role: UserRole, phoneNumber?: string) => Promise<void>;
+  register: (name: string, email: string, password: string, role: UserRole, phoneNumber?: string, expertise?: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -57,9 +57,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string,
     password: string,
     role: UserRole,
-    phoneNumber?: string
+    phoneNumber?: string,
+    expertise?: string
   ) => {
-    const response = await authAPI.register(name, email, password, role, phoneNumber);
+    const response = await authAPI.register(name, email, password, role, phoneNumber, expertise);
     const { user, token } = response.data;
     const normalizedUser: User = {
       id: user.id,

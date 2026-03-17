@@ -24,6 +24,7 @@ export interface Student {
   riskScore?: number;
   riskLevel?: 'low' | 'medium' | 'high';
   recommendation?: string;
+  riskFactors?: string[];
   counselorId?: string;
   counselorName?: string;
   counselingStatus?: 'pending' | 'in_progress' | 'resolved';

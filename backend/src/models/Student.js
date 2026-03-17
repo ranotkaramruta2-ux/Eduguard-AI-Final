@@ -77,6 +77,10 @@ const studentSchema = new mongoose.Schema(
     recommendation: {
       type: String,
     },
+    riskFactors: {
+      type: [String],
+      default: [],
+    },
     teacherId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

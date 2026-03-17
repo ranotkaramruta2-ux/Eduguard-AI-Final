@@ -10,7 +10,7 @@ import logger from '../utils/logger.js';
  */
 export const register = async (req, res) => {
   try {
-    const { name, email, password, role, phoneNumber } = req.body;
+    const { name, email, password, role, phoneNumber, expertise } = req.body;
 
     // Validation
     if (!name || !email || !password || !role) {
@@ -46,6 +46,7 @@ export const register = async (req, res) => {
       password,
       role,
       phoneNumber,
+      ...(role === 'counselor' && expertise ? { expertise } : {}),
     });
 
     // Generate token
@@ -203,7 +204,7 @@ export const logout = async (req, res) => {
 export const getCounselors = async (req, res) => {
   try {
     const counselors = await User.find({ role: 'counselor', isActive: true })
-      .select('name email phoneNumber role')
+      .select('name email phoneNumber role expertise')
       .sort({ name: 1 });
 
     res.status(200).json({

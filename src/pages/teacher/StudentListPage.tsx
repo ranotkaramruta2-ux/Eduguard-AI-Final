@@ -212,9 +212,23 @@ export default function StudentListPage() {
                     {s.isRegisteredOnly ? '—' : s.internalMarks}
                   </td>
                   <td className="py-3 px-3">
-                    {s.riskLevel
-                      ? <RiskBadge level={s.riskLevel} showScore score={s.riskScore} />
-                      : <span className="text-xs text-muted-foreground">Not analyzed</span>}
+                    {s.riskLevel ? (
+                      <div className="space-y-1">
+                        <RiskBadge level={s.riskLevel} showScore score={s.riskScore} />
+                        {s.riskFactors && s.riskFactors.length > 0 && s.riskFactors[0] !== 'No significant risk factors detected' && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {s.riskFactors.slice(0, 2).map((f, i) => (
+                              <span key={i} className="text-xs bg-destructive/10 text-destructive px-1.5 py-0.5 rounded">
+                                {f}
+                              </span>
+                            ))}
+                            {s.riskFactors.length > 2 && (
+                              <span className="text-xs text-muted-foreground">+{s.riskFactors.length - 2} more</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ) : <span className="text-xs text-muted-foreground">Not analyzed</span>}
                   </td>
                   <td className="py-3 px-3 text-xs text-muted-foreground">
                     {s.counselorName || '—'}
@@ -440,6 +454,16 @@ export default function StudentListPage() {
                                     <span className="ml-1 text-destructive font-medium">⚠ High risk student</span>
                                   )}
                                 </p>
+                                {s.riskFactors && s.riskFactors.length > 0 && s.riskFactors[0] !== 'No significant risk factors detected' && (
+                                  <div className="mb-3 p-2 bg-muted/50 rounded-lg">
+                                    <p className="text-xs font-medium text-muted-foreground mb-1">Risk Factors:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {s.riskFactors.map((f, i) => (
+                                        <span key={i} className="text-xs bg-destructive/10 text-destructive px-2 py-0.5 rounded-full">{f}</span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                                 {counselors.length === 0 ? (
                                   <p className="text-sm text-muted-foreground py-2">
                                     No counselors available. Please register counselors first.
@@ -452,9 +476,14 @@ export default function StudentListPage() {
                                     <SelectContent>
                                       {counselors.map(c => (
                                         <SelectItem key={c._id} value={c._id}>
-                                          <div>
+                                          <div className="flex items-center gap-2">
                                             <span className="font-medium">{c.name}</span>
-                                            <span className="text-muted-foreground ml-2 text-xs">{c.email}</span>
+                                            {c.expertise && (
+                                              <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded capitalize">
+                                                {c.expertise}
+                                              </span>
+                                            )}
+                                            <span className="text-muted-foreground text-xs">{c.email}</span>
                                           </div>
                                         </SelectItem>
                                       ))}

@@ -32,6 +32,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    expertise: {
+      type: String,
+      enum: ['academic', 'financial', 'behavioral', 'general'],
+      default: 'general',
+    },
     isActive: {
       type: Boolean,
       default: true,

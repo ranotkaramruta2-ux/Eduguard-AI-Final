@@ -132,24 +132,35 @@ export default function TeacherDashboard() {
             {recentHighRisk.length > 0 ? (
               <div className="space-y-3">
                 {recentHighRisk.map(s => (
-                  <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{s.name}</p>
-                      <p className="text-xs text-muted-foreground">{s.rollNumber}</p>
+                  <div key={s.id} className="flex flex-col p-3 rounded-lg bg-muted/50 gap-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{s.name}</p>
+                        <p className="text-xs text-muted-foreground">{s.rollNumber}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <RiskBadge level="high" showScore score={s.riskScore} />
+                        {!s.counselorId && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs h-7"
+                            onClick={() => navigate('/teacher/students')}
+                          >
+                            Assign
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <RiskBadge level="high" showScore score={s.riskScore} />
-                      {!s.counselorId && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs h-7"
-                          onClick={() => navigate('/teacher/students')}
-                        >
-                          Assign
-                        </Button>
-                      )}
-                    </div>
+                    {s.riskFactors && s.riskFactors.length > 0 && s.riskFactors[0] !== 'No significant risk factors detected' && (
+                      <div className="flex flex-wrap gap-1">
+                        {s.riskFactors.map((factor, i) => (
+                          <span key={i} className="text-xs bg-destructive/10 text-destructive px-2 py-0.5 rounded-full">
+                            {factor}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

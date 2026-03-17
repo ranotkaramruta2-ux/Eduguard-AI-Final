@@ -52,6 +52,7 @@ export const runPrediction = async (req, res) => {
     student.riskScore = predictionResult.riskScore;
     student.riskLevel = predictionResult.riskLevel;
     student.recommendation = predictionResult.recommendation;
+    student.riskFactors = predictionResult.riskFactors || [];
     await student.save();
 
     // Save prediction record
@@ -60,6 +61,7 @@ export const runPrediction = async (req, res) => {
       riskScore: predictionResult.riskScore,
       riskLevel: predictionResult.riskLevel,
       recommendation: predictionResult.recommendation,
+      riskFactors: predictionResult.riskFactors || [],
       predictedBy: req.user._id,
       inputData: {
         attendancePercentage: student.attendancePercentage,
@@ -170,8 +172,25 @@ export const getStudentPredictions = async (req, res) => {
  */
 async function handleHighRiskStudent(student, teacher, io) {
   try {
-    // Find available counselor (simple round-robin assignment)
-    const counselor = await User.findOne({ role: 'counselor', isActive: true });
+    // Find best-matched counselor based on risk factors
+    const allCounselors = await User.find({ role: 'counselor', isActive: true });
+    let counselor = null;
+
+    if (allCounselors.length > 0) {
+      const factors = student.riskFactors || [];
+      // Determine dominant risk category from factors
+      const isFinancial = factors.some(f => f.toLowerCase().includes('income') || f.toLowerCase().includes('financial'));
+      const isBehavioral = factors.some(f => f.toLowerCase().includes('engagement') || f.toLowerCase().includes('attendance'));
+      const isAcademic = factors.some(f => f.toLowerCase().includes('marks') || f.toLowerCase().includes('assignment') || f.toLowerCase().includes('failure'));
+
+      const preferredExpertise = isFinancial ? 'financial' : isBehavioral ? 'behavioral' : isAcademic ? 'academic' : 'general';
+
+      // Try to find a counselor with matching expertise, fallback to general, then any
+      counselor =
+        allCounselors.find(c => c.expertise === preferredExpertise) ||
+        allCounselors.find(c => c.expertise === 'general') ||
+        allCounselors[0];
+    }
 
     if (counselor) {
       // Assign counselor to student
@@ -186,7 +205,7 @@ async function handleHighRiskStudent(student, teacher, io) {
         status: 'pending',
         notes: [
           {
-            content: `Student automatically assigned due to high risk score (${student.riskScore}). Initial counseling session required.`,
+            content: `Student automatically assigned due to high risk score (${student.riskScore}). Risk factors: ${(student.riskFactors || []).join('; ') || 'N/A'}. Initial counseling session required.`,
             addedBy: teacher._id,
           },
         ],
@@ -195,7 +214,7 @@ async function handleHighRiskStudent(student, teacher, io) {
       // Create notifications for teacher
       await Notification.create({
         userId: teacher._id,
-        message: `High-risk student detected: ${student.name} (Risk Score: ${student.riskScore}). Counselor ${counselor.name} has been assigned.`,
+        message: `High-risk student detected: ${student.name} (Risk Score: ${student.riskScore}). Counselor ${counselor.name} [${counselor.expertise || 'general'}] has been assigned.`,
         type: 'risk',
         relatedStudentId: student._id,
         priority: 'high',
@@ -204,7 +223,7 @@ async function handleHighRiskStudent(student, teacher, io) {
       // Create notification for counselor
       await Notification.create({
         userId: counselor._id,
-        message: `New high-risk student assigned: ${student.name} (Risk Score: ${student.riskScore}). Please schedule counseling session.`,
+        message: `New high-risk student assigned: ${student.name} (Risk Score: ${student.riskScore}). Key concerns: ${(student.riskFactors || []).slice(0, 2).join(', ') || 'N/A'}.`,
         type: 'counseling',
         relatedStudentId: student._id,
         priority: 'high',

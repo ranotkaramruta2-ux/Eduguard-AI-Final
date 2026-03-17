@@ -3,6 +3,7 @@ import {
   calculateRiskScore,
   getRiskLevel,
   getRiskRecommendation,
+  getRiskFactors,
 } from '../utils/helpers.js';
 import logger from '../utils/logger.js';
 
@@ -76,6 +77,7 @@ class MLPredictionService {
         riskScore: risk_score,
         riskLevel: risk_level,
         recommendation: getRiskRecommendation(risk_level),
+        riskFactors: getRiskFactors(studentData),
         source: 'ml_api',
       };
     } catch (error) {
@@ -100,6 +102,7 @@ class MLPredictionService {
       riskScore,
       riskLevel,
       recommendation,
+      riskFactors: getRiskFactors(studentData),
       source: 'fallback',
     };
   }

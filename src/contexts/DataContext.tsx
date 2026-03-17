@@ -21,6 +21,7 @@ function mapStudent(s: any): Student {
     riskScore: s.riskScore,
     riskLevel: s.riskLevel,
     recommendation: s.recommendation,
+    riskFactors: s.riskFactors,
     counselorId: s.counselorId?._id || s.counselorId,
     counselorName: s.counselorId?.name,
     counselingStatus: s.counselingStatus,

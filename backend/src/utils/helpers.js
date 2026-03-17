@@ -52,6 +52,47 @@ export const getRiskLevel = (score) => {
 };
 
 /**
+ * Generate human-readable risk factors based on student data
+ * @param {Object} studentData - Student academic and behavioral data
+ * @returns {Array<string>} List of risk factor descriptions
+ */
+export const getRiskFactors = (studentData) => {
+  const factors = [];
+  const {
+    attendancePercentage = 100,
+    internalMarks = 100,
+    assignmentCompletion = 100,
+    previousFailures = 0,
+    engagementScore = 100,
+    familyIncome,
+    travelDistance,
+  } = studentData;
+
+  if (attendancePercentage < 50) factors.push('Critically low attendance (below 50%)');
+  else if (attendancePercentage < 70) factors.push('Poor attendance (below 70%)');
+  else if (attendancePercentage < 85) factors.push('Below average attendance (below 85%)');
+
+  if (internalMarks < 40) factors.push('Very low internal marks (below 40%)');
+  else if (internalMarks < 60) factors.push('Below average internal marks (below 60%)');
+  else if (internalMarks < 75) factors.push('Slightly low internal marks (below 75%)');
+
+  if (assignmentCompletion < 40) factors.push('Very low assignment completion rate (below 40%)');
+  else if (assignmentCompletion < 60) factors.push('Low assignment completion rate (below 60%)');
+
+  if (previousFailures >= 3) factors.push(`Multiple previous failures (${previousFailures} failures)`);
+  else if (previousFailures >= 1) factors.push(`History of academic failures (${previousFailures} failure${previousFailures > 1 ? 's' : ''})`);
+
+  if (engagementScore < 30) factors.push('Very low classroom engagement');
+  else if (engagementScore < 50) factors.push('Low classroom engagement');
+  else if (engagementScore < 70) factors.push('Below average engagement');
+
+  if (familyIncome !== undefined && familyIncome < 100000) factors.push('Low family income (financial risk)');
+  if (travelDistance !== undefined && travelDistance > 30) factors.push(`Long travel distance (${travelDistance} km)`);
+
+  return factors.length > 0 ? factors : ['No significant risk factors detected'];
+};
+
+/**
  * Get recommendation based on risk level
  * @param {String} level - Risk level
  * @returns {String} Recommendation

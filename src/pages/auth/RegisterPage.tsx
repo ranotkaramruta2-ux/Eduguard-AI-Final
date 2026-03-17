@@ -16,13 +16,14 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>('student');
+  const [expertise, setExpertise] = useState('general');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await register(name, email, password, role);
+      await register(name, email, password, role, undefined, role === 'counselor' ? expertise : undefined);
       toast.success('Registration successful!');
       navigate(ROLE_ROUTES[role]);
     } catch (err: any) {
@@ -69,6 +70,23 @@ export default function RegisterPage() {
               </SelectContent>
             </Select>
           </div>
+          {role === 'counselor' && (
+            <div className="space-y-2">
+              <Label>Area of Expertise</Label>
+              <Select value={expertise} onValueChange={setExpertise}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="academic">Academic (marks, assignments, failures)</SelectItem>
+                  <SelectItem value="behavioral">Behavioral (attendance, engagement)</SelectItem>
+                  <SelectItem value="financial">Financial (income, travel hardship)</SelectItem>
+                  <SelectItem value="general">General (all-round support)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                High-risk students will be auto-assigned to counselors matching their primary risk factor.
+              </p>
+            </div>
+          )}
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? 'Creating account...' : 'Register'}
           </Button>
