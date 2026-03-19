@@ -118,6 +118,19 @@ export interface StudentData {
   riskLevel?: 'low' | 'medium' | 'high';
   recommendation?: string;
   riskFactors?: string[];
+  counselorType?: 'academic' | 'financial' | 'behavioral' | 'medical' | 'general';
+  // financial
+  scholarshipStatus?: 'none' | 'partial' | 'full';
+  partTimeJob?: boolean;
+  numberOfDependents?: number;
+  // behavioural
+  disciplinaryActions?: number;
+  socialMediaHours?: number;
+  extracurricularParticipation?: boolean;
+  // medical
+  hasChronicIllness?: boolean;
+  mentalHealthConcern?: boolean;
+  missedDueMedical?: number;
   teacherId?: any;
   userId?: any;
   counselorId?: any;
@@ -202,6 +215,7 @@ export interface PredictionResult {
   riskLevel: 'low' | 'medium' | 'high';
   recommendation: string;
   riskFactors?: string[];
+  counselorType?: 'academic' | 'financial' | 'behavioral' | 'medical' | 'general';
   source: string;
 }
 

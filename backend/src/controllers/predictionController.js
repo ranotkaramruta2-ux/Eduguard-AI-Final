@@ -46,6 +46,15 @@ export const runPrediction = async (req, res) => {
       travelDistance: student.travelDistance,
       previousFailures: student.previousFailures,
       engagementScore: student.engagementScore,
+      scholarshipStatus: student.scholarshipStatus,
+      partTimeJob: student.partTimeJob,
+      numberOfDependents: student.numberOfDependents,
+      disciplinaryActions: student.disciplinaryActions,
+      socialMediaHours: student.socialMediaHours,
+      extracurricularParticipation: student.extracurricularParticipation,
+      hasChronicIllness: student.hasChronicIllness,
+      mentalHealthConcern: student.mentalHealthConcern,
+      missedDueMedical: student.missedDueMedical,
     });
 
     // Update student record with prediction
@@ -53,6 +62,7 @@ export const runPrediction = async (req, res) => {
     student.riskLevel = predictionResult.riskLevel;
     student.recommendation = predictionResult.recommendation;
     student.riskFactors = predictionResult.riskFactors || [];
+    student.counselorType = predictionResult.counselorType || 'general';
     await student.save();
 
     // Save prediction record
@@ -62,6 +72,7 @@ export const runPrediction = async (req, res) => {
       riskLevel: predictionResult.riskLevel,
       recommendation: predictionResult.recommendation,
       riskFactors: predictionResult.riskFactors || [],
+      counselorType: predictionResult.counselorType || 'general',
       predictedBy: req.user._id,
       inputData: {
         attendancePercentage: student.attendancePercentage,
@@ -177,13 +188,7 @@ async function handleHighRiskStudent(student, teacher, io) {
     let counselor = null;
 
     if (allCounselors.length > 0) {
-      const factors = student.riskFactors || [];
-      // Determine dominant risk category from factors
-      const isFinancial = factors.some(f => f.toLowerCase().includes('income') || f.toLowerCase().includes('financial'));
-      const isBehavioral = factors.some(f => f.toLowerCase().includes('engagement') || f.toLowerCase().includes('attendance'));
-      const isAcademic = factors.some(f => f.toLowerCase().includes('marks') || f.toLowerCase().includes('assignment') || f.toLowerCase().includes('failure'));
-
-      const preferredExpertise = isFinancial ? 'financial' : isBehavioral ? 'behavioral' : isAcademic ? 'academic' : 'general';
+      const preferredExpertise = student.counselorType || 'general';
 
       // Try to find a counselor with matching expertise, fallback to general, then any
       counselor =
@@ -214,7 +219,7 @@ async function handleHighRiskStudent(student, teacher, io) {
       // Create notifications for teacher
       await Notification.create({
         userId: teacher._id,
-        message: `High-risk student detected: ${student.name} (Risk Score: ${student.riskScore}). Counselor ${counselor.name} [${counselor.expertise || 'general'}] has been assigned.`,
+        message: `High-risk student detected: ${student.name} (Risk Score: ${student.riskScore}). ${student.counselorType ? `Primary concern: ${student.counselorType}. ` : ''}Counselor ${counselor.name} [${counselor.expertise || 'general'}] has been assigned.`,
         type: 'risk',
         relatedStudentId: student._id,
         priority: 'high',

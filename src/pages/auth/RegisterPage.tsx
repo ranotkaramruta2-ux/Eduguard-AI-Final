@@ -79,6 +79,7 @@ export default function RegisterPage() {
                   <SelectItem value="academic">Academic (marks, assignments, failures)</SelectItem>
                   <SelectItem value="behavioral">Behavioral (attendance, engagement)</SelectItem>
                   <SelectItem value="financial">Financial (income, travel hardship)</SelectItem>
+                  <SelectItem value="medical">Medical (chronic illness, mental health)</SelectItem>
                   <SelectItem value="general">General (all-round support)</SelectItem>
                 </SelectContent>
               </Select>

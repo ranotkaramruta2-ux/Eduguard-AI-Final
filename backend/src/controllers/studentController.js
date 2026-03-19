@@ -23,6 +23,18 @@ export const addStudent = async (req, res) => {
       travelDistance,
       previousFailures,
       engagementScore,
+      // financial
+      scholarshipStatus,
+      partTimeJob,
+      numberOfDependents,
+      // behavioural
+      disciplinaryActions,
+      socialMediaHours,
+      extracurricularParticipation,
+      // medical
+      hasChronicIllness,
+      mentalHealthConcern,
+      missedDueMedical,
     } = req.body;
 
     // Validation
@@ -91,6 +103,15 @@ export const addStudent = async (req, res) => {
       travelDistance,
       previousFailures,
       engagementScore,
+      scholarshipStatus: scholarshipStatus || 'none',
+      partTimeJob: partTimeJob || false,
+      numberOfDependents: numberOfDependents || 0,
+      disciplinaryActions: disciplinaryActions || 0,
+      socialMediaHours: socialMediaHours || 0,
+      extracurricularParticipation: extracurricularParticipation || false,
+      hasChronicIllness: hasChronicIllness || false,
+      mentalHealthConcern: mentalHealthConcern || false,
+      missedDueMedical: missedDueMedical || 0,
       teacherId: req.user._id,
       userId: studentUserId,
     });

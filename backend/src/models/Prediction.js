@@ -26,6 +26,11 @@ const predictionSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    counselorType: {
+      type: String,
+      enum: ['academic', 'financial', 'behavioral', 'medical', 'general'],
+      default: 'general',
+    },
     predictionDate: {
       type: Date,
       default: Date.now,

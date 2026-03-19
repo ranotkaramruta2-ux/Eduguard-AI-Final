@@ -5,10 +5,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Search, UserPlus, Trash2, Loader2, RefreshCw, Pencil, BarChart2, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { studentAPI } from '@/lib/api';
+
+const COUNSELOR_TYPE_COLORS: Record<string, string> = {
+  academic: 'bg-blue-100 text-blue-700',
+  financial: 'bg-yellow-100 text-yellow-700',
+  behavioral: 'bg-orange-100 text-orange-700',
+  medical: 'bg-red-100 text-red-700',
+  general: 'bg-muted text-muted-foreground',
+};
+
+const COUNSELOR_TYPE_LABELS: Record<string, string> = {
+  academic: '📚 Academic', financial: '💰 Financial',
+  behavioral: '🧠 Behavioral', medical: '🏥 Medical', general: '👤 General',
+};
 
 export default function StudentListPage() {
   const { students, assignCounselor, runPrediction, deleteStudent, counselors, fetchStudents, loadingStudents } = useData();
@@ -29,6 +43,15 @@ export default function StudentListPage() {
     travelDistance: '',
     previousFailures: '',
     engagementScore: '',
+    scholarshipStatus: 'none',
+    partTimeJob: false,
+    numberOfDependents: '',
+    disciplinaryActions: '',
+    socialMediaHours: '',
+    extracurricularParticipation: false,
+    hasChronicIllness: false,
+    mentalHealthConcern: false,
+    missedDueMedical: '',
   });
 
   const filtered = students.filter(s =>
@@ -47,11 +70,20 @@ export default function StudentListPage() {
       travelDistance: String(s.travelDistance ?? ''),
       previousFailures: String(s.previousFailures ?? ''),
       engagementScore: String(s.engagementScore ?? ''),
+      scholarshipStatus: s.scholarshipStatus ?? 'none',
+      partTimeJob: s.partTimeJob ?? false,
+      numberOfDependents: String(s.numberOfDependents ?? ''),
+      disciplinaryActions: String(s.disciplinaryActions ?? ''),
+      socialMediaHours: String(s.socialMediaHours ?? ''),
+      extracurricularParticipation: s.extracurricularParticipation ?? false,
+      hasChronicIllness: s.hasChronicIllness ?? false,
+      mentalHealthConcern: s.mentalHealthConcern ?? false,
+      missedDueMedical: String(s.missedDueMedical ?? ''),
     });
     setEditStudentId(studentId);
   };
 
-  const updateEditForm = (key: keyof typeof editForm, value: string) => {
+  const updateEditForm = (key: keyof typeof editForm, value: string | boolean) => {
     setEditForm(prev => ({ ...prev, [key]: value }));
   };
 
@@ -67,6 +99,15 @@ export default function StudentListPage() {
         travelDistance: Number(editForm.travelDistance) || 0,
         previousFailures: Number(editForm.previousFailures) || 0,
         engagementScore: Number(editForm.engagementScore) || 0,
+        scholarshipStatus: editForm.scholarshipStatus as any,
+        partTimeJob: editForm.partTimeJob,
+        numberOfDependents: Number(editForm.numberOfDependents) || 0,
+        disciplinaryActions: Number(editForm.disciplinaryActions) || 0,
+        socialMediaHours: Number(editForm.socialMediaHours) || 0,
+        extracurricularParticipation: editForm.extracurricularParticipation,
+        hasChronicIllness: editForm.hasChronicIllness,
+        mentalHealthConcern: editForm.mentalHealthConcern,
+        missedDueMedical: Number(editForm.missedDueMedical) || 0,
       });
       toast.success('Student data updated');
       setEditStudentId(null);
@@ -302,129 +343,108 @@ export default function StudentListPage() {
                                 <Pencil className="h-3 w-3" /> Edit data
                               </Button>
                             </DialogTrigger>
-                            <DialogContent>
+                            <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
                               <DialogHeader>
-                                <DialogTitle>Edit academic data for {s.name}</DialogTitle>
+                                <DialogTitle>Edit data for {s.name}</DialogTitle>
                               </DialogHeader>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                                <div className="space-y-1.5">
-                                  <label className="text-xs font-medium" htmlFor="attendancePercentage">
-                                    Attendance (%)
-                                  </label>
-                                  <Input
-                                    id="attendancePercentage"
-                                    type="number"
-                                    value={editForm.attendancePercentage}
-                                    onChange={e => updateEditForm('attendancePercentage', e.target.value)}
-                                    placeholder="0-100"
-                                    min={0}
-                                    max={100}
-                                  />
+                              <div className="space-y-4 mt-2">
+                                {/* Academic */}
+                                <p className="text-xs font-semibold text-muted-foreground uppercase">Academic</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                  {[
+                                    { key: 'attendancePercentage', label: 'Attendance (%)' },
+                                    { key: 'internalMarks', label: 'Internal Marks' },
+                                    { key: 'assignmentCompletion', label: 'Assignment (%)' },
+                                    { key: 'engagementScore', label: 'Engagement Score' },
+                                    { key: 'previousFailures', label: 'Previous Failures' },
+                                  ].map(f => (
+                                    <div key={f.key} className="space-y-1">
+                                      <label className="text-xs font-medium">{f.label}</label>
+                                      <Input type="number" min={0}
+                                        value={(editForm as any)[f.key]}
+                                        onChange={e => updateEditForm(f.key as any, e.target.value)} />
+                                    </div>
+                                  ))}
                                 </div>
-                                <div className="space-y-1.5">
-                                  <label className="text-xs font-medium" htmlFor="internalMarks">
-                                    Internal Marks
-                                  </label>
-                                  <Input
-                                    id="internalMarks"
-                                    type="number"
-                                    value={editForm.internalMarks}
-                                    onChange={e => updateEditForm('internalMarks', e.target.value)}
-                                    placeholder="0-100"
-                                    min={0}
-                                    max={100}
-                                  />
+
+                                {/* Financial */}
+                                <p className="text-xs font-semibold text-muted-foreground uppercase">Financial</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="space-y-1">
+                                    <label className="text-xs font-medium">Family Income (₹)</label>
+                                    <Input type="number" min={0} value={editForm.familyIncome}
+                                      onChange={e => updateEditForm('familyIncome', e.target.value)} />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-xs font-medium">Travel Distance (km)</label>
+                                    <Input type="number" min={0} value={editForm.travelDistance}
+                                      onChange={e => updateEditForm('travelDistance', e.target.value)} />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-xs font-medium">Scholarship</label>
+                                    <Select value={editForm.scholarshipStatus} onValueChange={v => updateEditForm('scholarshipStatus', v)}>
+                                      <SelectTrigger><SelectValue /></SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="none">None</SelectItem>
+                                        <SelectItem value="partial">Partial</SelectItem>
+                                        <SelectItem value="full">Full</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-xs font-medium">Dependents</label>
+                                    <Input type="number" min={0} value={editForm.numberOfDependents}
+                                      onChange={e => updateEditForm('numberOfDependents', e.target.value)} />
+                                  </div>
+                                  <div className="flex items-center justify-between col-span-2 p-2 bg-muted/40 rounded">
+                                    <span className="text-xs font-medium">Part-Time Job</span>
+                                    <Switch checked={editForm.partTimeJob} onCheckedChange={v => updateEditForm('partTimeJob', v as any)} />
+                                  </div>
                                 </div>
-                                <div className="space-y-1.5">
-                                  <label className="text-xs font-medium" htmlFor="assignmentCompletion">
-                                    Assignment Completion (%)
-                                  </label>
-                                  <Input
-                                    id="assignmentCompletion"
-                                    type="number"
-                                    value={editForm.assignmentCompletion}
-                                    onChange={e => updateEditForm('assignmentCompletion', e.target.value)}
-                                    placeholder="0-100"
-                                    min={0}
-                                    max={100}
-                                  />
+
+                                {/* Behavioural */}
+                                <p className="text-xs font-semibold text-muted-foreground uppercase">Behavioural</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="space-y-1">
+                                    <label className="text-xs font-medium">Disciplinary Actions</label>
+                                    <Input type="number" min={0} value={editForm.disciplinaryActions}
+                                      onChange={e => updateEditForm('disciplinaryActions', e.target.value)} />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-xs font-medium">Social Media (hrs/day)</label>
+                                    <Input type="number" min={0} value={editForm.socialMediaHours}
+                                      onChange={e => updateEditForm('socialMediaHours', e.target.value)} />
+                                  </div>
+                                  <div className="flex items-center justify-between col-span-2 p-2 bg-muted/40 rounded">
+                                    <span className="text-xs font-medium">Extracurricular Participation</span>
+                                    <Switch checked={editForm.extracurricularParticipation} onCheckedChange={v => updateEditForm('extracurricularParticipation', v as any)} />
+                                  </div>
                                 </div>
-                                <div className="space-y-1.5">
-                                  <label className="text-xs font-medium" htmlFor="familyIncome">
-                                    Family Income (₹)
-                                  </label>
-                                  <Input
-                                    id="familyIncome"
-                                    type="number"
-                                    value={editForm.familyIncome}
-                                    onChange={e => updateEditForm('familyIncome', e.target.value)}
-                                    placeholder="Annual income"
-                                    min={0}
-                                  />
-                                </div>
-                                <div className="space-y-1.5">
-                                  <label className="text-xs font-medium" htmlFor="travelDistance">
-                                    Travel Distance (km)
-                                  </label>
-                                  <Input
-                                    id="travelDistance"
-                                    type="number"
-                                    value={editForm.travelDistance}
-                                    onChange={e => updateEditForm('travelDistance', e.target.value)}
-                                    placeholder="Distance in km"
-                                    min={0}
-                                  />
-                                </div>
-                                <div className="space-y-1.5">
-                                  <label className="text-xs font-medium" htmlFor="previousFailures">
-                                    Previous Failures
-                                  </label>
-                                  <Input
-                                    id="previousFailures"
-                                    type="number"
-                                    value={editForm.previousFailures}
-                                    onChange={e => updateEditForm('previousFailures', e.target.value)}
-                                    placeholder="Number of failures"
-                                    min={0}
-                                  />
-                                </div>
-                                <div className="space-y-1.5">
-                                  <label className="text-xs font-medium" htmlFor="engagementScore">
-                                    Engagement Score
-                                  </label>
-                                  <Input
-                                    id="engagementScore"
-                                    type="number"
-                                    value={editForm.engagementScore}
-                                    onChange={e => updateEditForm('engagementScore', e.target.value)}
-                                    placeholder="0-100"
-                                    min={0}
-                                    max={100}
-                                  />
+
+                                {/* Medical */}
+                                <p className="text-xs font-semibold text-muted-foreground uppercase">Medical</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="space-y-1">
+                                    <label className="text-xs font-medium">Days Missed (Medical)</label>
+                                    <Input type="number" min={0} value={editForm.missedDueMedical}
+                                      onChange={e => updateEditForm('missedDueMedical', e.target.value)} />
+                                  </div>
+                                  <div className="flex flex-col gap-2 col-span-2">
+                                    <div className="flex items-center justify-between p-2 bg-muted/40 rounded">
+                                      <span className="text-xs font-medium">Chronic Illness</span>
+                                      <Switch checked={editForm.hasChronicIllness} onCheckedChange={v => updateEditForm('hasChronicIllness', v as any)} />
+                                    </div>
+                                    <div className="flex items-center justify-between p-2 bg-muted/40 rounded">
+                                      <span className="text-xs font-medium">Mental Health Concern</span>
+                                      <Switch checked={editForm.mentalHealthConcern} onCheckedChange={v => updateEditForm('mentalHealthConcern', v as any)} />
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                               <div className="flex justify-end gap-2 pt-4">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  onClick={() => setEditStudentId(null)}
-                                  disabled={savingEditId === s.id}
-                                >
-                                  Cancel
-                                </Button>
-                                <Button
-                                  type="button"
-                                  onClick={handleSaveEdit}
-                                  disabled={savingEditId === s.id}
-                                >
-                                  {savingEditId === s.id ? (
-                                    <>
-                                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                      Saving...
-                                    </>
-                                  ) : (
-                                    'Save changes'
-                                  )}
+                                <Button type="button" variant="outline" onClick={() => setEditStudentId(null)} disabled={savingEditId === s.id}>Cancel</Button>
+                                <Button type="button" onClick={handleSaveEdit} disabled={savingEditId === s.id}>
+                                  {savingEditId === s.id ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Saving...</> : 'Save changes'}
                                 </Button>
                               </div>
                             </DialogContent>
@@ -454,12 +474,20 @@ export default function StudentListPage() {
                                     <span className="ml-1 text-destructive font-medium">⚠ High risk student</span>
                                   )}
                                 </p>
+                                {s.counselorType && (
+                                  <div className="mb-3 flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
+                                    <span className="text-xs text-muted-foreground">Recommended type:</span>
+                                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${COUNSELOR_TYPE_COLORS[s.counselorType]}`}>
+                                      {COUNSELOR_TYPE_LABELS[s.counselorType]}
+                                    </span>
+                                  </div>
+                                )}
                                 {s.riskFactors && s.riskFactors.length > 0 && s.riskFactors[0] !== 'No significant risk factors detected' && (
                                   <div className="mb-3 p-2 bg-muted/50 rounded-lg">
                                     <p className="text-xs font-medium text-muted-foreground mb-1">Risk Factors:</p>
                                     <div className="flex flex-wrap gap-1">
                                       {s.riskFactors.map((f, i) => (
-                                        <span key={i} className="text-xs bg-destructive/10 text-destructive px-2 py-0.5 rounded-full">{f}</span>
+                                        <span key={i} className="text-xs bg-destructive/10 text-destructive px-2 py-0.5 rounded-full">{f.replace(/^\[\w+\] /, '')}</span>
                                       ))}
                                     </div>
                                   </div>
@@ -479,11 +507,13 @@ export default function StudentListPage() {
                                           <div className="flex items-center gap-2">
                                             <span className="font-medium">{c.name}</span>
                                             {c.expertise && (
-                                              <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded capitalize">
+                                              <span className={`text-xs px-1.5 py-0.5 rounded capitalize ${COUNSELOR_TYPE_COLORS[c.expertise] || 'bg-muted text-muted-foreground'}`}>
                                                 {c.expertise}
                                               </span>
                                             )}
-                                            <span className="text-muted-foreground text-xs">{c.email}</span>
+                                            {s.counselorType && c.expertise === s.counselorType && (
+                                              <span className="text-xs text-green-600 font-medium">✓ match</span>
+                                            )}
                                           </div>
                                         </SelectItem>
                                       ))}

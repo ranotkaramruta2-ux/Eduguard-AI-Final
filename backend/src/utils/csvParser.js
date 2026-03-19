@@ -39,14 +39,9 @@ export const parseCSVBuffer = (buffer) => {
 
 /**
  * Validate CSV data structure for student records
- * @param {Array} data - Parsed CSV data
- * @returns {Object} Validation result
  */
 export const validateStudentCSV = (data) => {
-  // Only name and roll number are strictly required.
-  // All numeric fields are optional and will default to 0 if missing/empty.
   const requiredFields = ['name', 'rollNumber'];
-
   const errors = [];
   const validData = [];
 
@@ -54,47 +49,55 @@ export const validateStudentCSV = (data) => {
     const missingFields = requiredFields.filter((field) => !row[field]);
 
     if (missingFields.length > 0) {
-      errors.push({
-        row: index + 1,
-        message: `Missing required fields: ${missingFields.join(', ')}`,
-      });
+      errors.push({ row: index + 1, message: `Missing required fields: ${missingFields.join(', ')}` });
     } else {
-      // Convert numeric fields
       try {
         const numOrZero = (val) => {
           if (val === undefined || val === null || val === '') return 0;
           const parsed = Number(val);
-          if (Number.isNaN(parsed)) {
-            throw new Error(`Invalid number value "${val}"`);
-          }
+          if (Number.isNaN(parsed)) throw new Error(`Invalid number value "${val}"`);
           return parsed;
         };
+
+        const toBool = (val) => {
+          if (val === undefined || val === null || val === '') return false;
+          return val === 'true' || val === '1' || val === 'yes';
+        };
+
+        const scholarshipVal = (row.scholarshipStatus || '').toLowerCase().trim();
+        const validScholarship = ['none', 'partial', 'full'].includes(scholarshipVal) ? scholarshipVal : 'none';
 
         validData.push({
           name: row.name.trim(),
           rollNumber: row.rollNumber.trim().toUpperCase(),
           email: row.email?.trim() || undefined,
           phoneNumber: row.phoneNumber?.trim() || undefined,
+          // academic
           attendancePercentage: numOrZero(row.attendancePercentage),
           internalMarks: numOrZero(row.internalMarks),
           assignmentCompletion: numOrZero(row.assignmentCompletion),
-          familyIncome: numOrZero(row.familyIncome),
-          travelDistance: numOrZero(row.travelDistance),
           previousFailures: numOrZero(row.previousFailures),
           engagementScore: numOrZero(row.engagementScore),
+          // financial
+          familyIncome: numOrZero(row.familyIncome),
+          travelDistance: numOrZero(row.travelDistance),
+          scholarshipStatus: validScholarship,
+          partTimeJob: toBool(row.partTimeJob),
+          numberOfDependents: numOrZero(row.numberOfDependents),
+          // behavioural
+          disciplinaryActions: numOrZero(row.disciplinaryActions),
+          socialMediaHours: numOrZero(row.socialMediaHours),
+          extracurricularParticipation: toBool(row.extracurricularParticipation),
+          // medical
+          hasChronicIllness: toBool(row.hasChronicIllness),
+          mentalHealthConcern: toBool(row.mentalHealthConcern),
+          missedDueMedical: numOrZero(row.missedDueMedical),
         });
       } catch (err) {
-        errors.push({
-          row: index + 1,
-          message: `Invalid data format: ${err.message}`,
-        });
+        errors.push({ row: index + 1, message: `Invalid data format: ${err.message}` });
       }
     }
   });
 
-  return {
-    isValid: errors.length === 0,
-    errors,
-    validData,
-  };
+  return { isValid: errors.length === 0, errors, validData };
 };

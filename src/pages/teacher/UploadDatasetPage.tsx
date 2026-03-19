@@ -133,16 +133,53 @@ export default function UploadDatasetPage() {
       <div className="stat-card space-y-3">
         <h3 className="text-sm font-semibold text-foreground">Required CSV Format</h3>
         <p className="text-xs text-muted-foreground">
-          Your CSV file must have these column headers (case-sensitive):
+          Only <code>name</code> and <code>rollNumber</code> are required. All other columns are optional and default to 0/false.
         </p>
-        <div className="bg-muted rounded p-3 overflow-x-auto">
-          <code className="text-[10px] text-muted-foreground whitespace-nowrap">
-            name,rollNumber,attendancePercentage,internalMarks,assignmentCompletion,familyIncome,travelDistance,previousFailures,engagementScore
-          </code>
+
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Academic</p>
+          <div className="bg-muted rounded p-2 overflow-x-auto">
+            <code className="text-[10px] text-muted-foreground whitespace-nowrap">
+              attendancePercentage, internalMarks, assignmentCompletion, previousFailures, engagementScore
+            </code>
+          </div>
+
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Financial</p>
+          <div className="bg-muted rounded p-2 overflow-x-auto">
+            <code className="text-[10px] text-muted-foreground whitespace-nowrap">
+              familyIncome, travelDistance, scholarshipStatus (none/partial/full), partTimeJob (true/false), numberOfDependents
+            </code>
+          </div>
+
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Behavioural</p>
+          <div className="bg-muted rounded p-2 overflow-x-auto">
+            <code className="text-[10px] text-muted-foreground whitespace-nowrap">
+              disciplinaryActions, socialMediaHours, extracurricularParticipation (true/false)
+            </code>
+          </div>
+
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Medical</p>
+          <div className="bg-muted rounded p-2 overflow-x-auto">
+            <code className="text-[10px] text-muted-foreground whitespace-nowrap">
+              hasChronicIllness (true/false), mentalHealthConcern (true/false), missedDueMedical
+            </code>
+          </div>
+
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Optional identity columns</p>
+          <div className="bg-muted rounded p-2 overflow-x-auto">
+            <code className="text-[10px] text-muted-foreground whitespace-nowrap">
+              email, phoneNumber
+            </code>
+          </div>
         </div>
-        <div className="text-xs text-muted-foreground space-y-1">
-          <p><strong>Optional columns:</strong> email, phoneNumber</p>
-          <p><strong>Example row:</strong> John Doe,CS2024007,75,68,80,45000,10,0,70</p>
+
+        <div className="text-xs text-muted-foreground space-y-1 pt-1">
+          <p>Example row:</p>
+          <div className="bg-muted rounded p-2 overflow-x-auto">
+            <code className="text-[10px] text-muted-foreground whitespace-nowrap">
+              John Doe,CS2024007,75,68,80,0,70,45000,10,partial,false,1,0,3,false,false,false,0
+            </code>
+          </div>
         </div>
       </div>
     </div>

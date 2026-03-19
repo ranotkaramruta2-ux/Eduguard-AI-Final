@@ -60,24 +60,35 @@ class MLPredictionService {
         travelDistance: studentData.travelDistance,
         failures: studentData.previousFailures,
         engagementScore: studentData.engagementScore,
+        // new fields
+        scholarshipStatus: studentData.scholarshipStatus,
+        partTimeJob: studentData.partTimeJob,
+        numberOfDependents: studentData.numberOfDependents,
+        disciplinaryActions: studentData.disciplinaryActions,
+        socialMediaHours: studentData.socialMediaHours,
+        extracurricularParticipation: studentData.extracurricularParticipation,
+        hasChronicIllness: studentData.hasChronicIllness,
+        mentalHealthConcern: studentData.mentalHealthConcern,
+        missedDueMedical: studentData.missedDueMedical,
       };
 
       logger.info('Calling ML API:', this.mlApiUrl);
 
       const response = await axios.post(this.mlApiUrl, payload, {
-        timeout: 10000, // 10 seconds timeout
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        timeout: 10000,
+        headers: { 'Content-Type': 'application/json' },
       });
 
       const { risk_score, risk_level } = response.data;
+      const { factors, counselorType, breakdown } = getRiskFactors(studentData);
 
       return {
         riskScore: risk_score,
         riskLevel: risk_level,
         recommendation: getRiskRecommendation(risk_level),
-        riskFactors: getRiskFactors(studentData),
+        riskFactors: factors,
+        counselorType,
+        breakdown,
         source: 'ml_api',
       };
     } catch (error) {
@@ -95,6 +106,7 @@ class MLPredictionService {
     const riskScore = calculateRiskScore(studentData);
     const riskLevel = getRiskLevel(riskScore);
     const recommendation = getRiskRecommendation(riskLevel);
+    const { factors, counselorType, breakdown } = getRiskFactors(studentData);
 
     logger.info('Using fallback prediction calculation');
 
@@ -102,7 +114,9 @@ class MLPredictionService {
       riskScore,
       riskLevel,
       recommendation,
-      riskFactors: getRiskFactors(studentData),
+      riskFactors: factors,
+      counselorType,
+      breakdown,
       source: 'fallback',
     };
   }

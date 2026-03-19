@@ -25,6 +25,19 @@ export interface Student {
   riskLevel?: 'low' | 'medium' | 'high';
   recommendation?: string;
   riskFactors?: string[];
+  counselorType?: 'academic' | 'financial' | 'behavioral' | 'medical' | 'general';
+  // financial
+  scholarshipStatus?: 'none' | 'partial' | 'full';
+  partTimeJob?: boolean;
+  numberOfDependents?: number;
+  // behavioural
+  disciplinaryActions?: number;
+  socialMediaHours?: number;
+  extracurricularParticipation?: boolean;
+  // medical
+  hasChronicIllness?: boolean;
+  mentalHealthConcern?: boolean;
+  missedDueMedical?: number;
   counselorId?: string;
   counselorName?: string;
   counselingStatus?: 'pending' | 'in_progress' | 'resolved';

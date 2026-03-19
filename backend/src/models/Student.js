@@ -65,6 +65,50 @@ const studentSchema = new mongoose.Schema(
       min: [0, 'Engagement score cannot be negative'],
       max: [100, 'Engagement score cannot exceed 100'],
     },
+    // ── Financial indicators ──────────────────────────────────────────────────
+    scholarshipStatus: {
+      type: String,
+      enum: ['none', 'partial', 'full'],
+      default: 'none',
+    },
+    partTimeJob: {
+      type: Boolean,
+      default: false,
+    },
+    numberOfDependents: {
+      type: Number,
+      default: 0,
+      min: [0, 'Dependents cannot be negative'],
+    },
+    // ── Behavioural indicators ────────────────────────────────────────────────
+    disciplinaryActions: {
+      type: Number,
+      default: 0,
+      min: [0, 'Disciplinary actions cannot be negative'],
+    },
+    socialMediaHours: {
+      type: Number,
+      default: 0,
+      min: [0, 'Social media hours cannot be negative'],
+    },
+    extracurricularParticipation: {
+      type: Boolean,
+      default: false,
+    },
+    // ── Medical indicators ────────────────────────────────────────────────────
+    hasChronicIllness: {
+      type: Boolean,
+      default: false,
+    },
+    mentalHealthConcern: {
+      type: Boolean,
+      default: false,
+    },
+    missedDueMedical: {
+      type: Number,
+      default: 0,
+      min: [0, 'Medical absences cannot be negative'],
+    },
     riskScore: {
       type: Number,
       min: [0, 'Risk score cannot be negative'],
@@ -80,6 +124,11 @@ const studentSchema = new mongoose.Schema(
     riskFactors: {
       type: [String],
       default: [],
+    },
+    counselorType: {
+      type: String,
+      enum: ['academic', 'financial', 'behavioral', 'medical', 'general'],
+      default: 'general',
     },
     teacherId: {
       type: mongoose.Schema.Types.ObjectId,
