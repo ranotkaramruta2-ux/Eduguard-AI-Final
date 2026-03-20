@@ -2,8 +2,8 @@
 
 ## Student Dropout Prediction System API
 
-**Base URL**: `https://eduguard-ai-1.onrender.com/api`  
-**Version**: 1.0.0  
+**Base URL**: `https://eduguard-ai-1.onrender.com/api`
+**Version**: 2.0.0
 **Authentication**: JWT Bearer Token
 
 ---
@@ -12,7 +12,6 @@
 
 All endpoints except `/auth/register` and `/auth/login` require authentication.
 
-Include the JWT token in the Authorization header:
 ```
 Authorization: Bearer <your_jwt_token>
 ```
@@ -23,21 +22,25 @@ Authorization: Bearer <your_jwt_token>
 
 ### Authentication Endpoints
 
-#### 1. Register User
-**POST** `/auth/register`
+#### POST `/auth/register`
 
-Register a new user in the system.
+Register a new user. When `role` is `counselor`, include `expertise` to enable smart student matching.
 
 **Request Body:**
 ```json
 {
-  "name": "John Doe",
-  "email": "john@example.com",
+  "name": "Dr. Jane Smith",
+  "email": "jane@counselor.com",
   "password": "password123",
-  "role": "teacher",
-  "phoneNumber": "+1234567890"
+  "role": "counselor",
+  "phoneNumber": "+911234567890",
+  "expertise": "financial"
 }
 ```
+
+`role` values: `teacher` | `student` | `counselor`
+
+`expertise` values (counselor only): `academic` | `financial` | `behavioral` | `medical` | `general`
 
 **Response (201):**
 ```json
@@ -47,9 +50,9 @@ Register a new user in the system.
   "data": {
     "user": {
       "id": "507f1f77bcf86cd799439011",
-      "name": "John Doe",
-      "email": "john@example.com",
-      "role": "teacher"
+      "name": "Dr. Jane Smith",
+      "email": "jane@counselor.com",
+      "role": "counselor"
     },
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
   }
@@ -58,10 +61,7 @@ Register a new user in the system.
 
 ---
 
-#### 2. Login
-**POST** `/auth/login`
-
-Authenticate user and receive JWT token.
+#### POST `/auth/login`
 
 **Request Body:**
 ```json
@@ -75,14 +75,8 @@ Authenticate user and receive JWT token.
 ```json
 {
   "success": true,
-  "message": "Login successful",
   "data": {
-    "user": {
-      "id": "507f1f77bcf86cd799439011",
-      "name": "John Doe",
-      "email": "john@example.com",
-      "role": "teacher"
-    },
+    "user": { "id": "...", "name": "John Doe", "email": "john@example.com", "role": "teacher" },
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
   }
 }
@@ -90,27 +84,37 @@ Authenticate user and receive JWT token.
 
 ---
 
-#### 3. Get Current User
-**GET** `/auth/me`
+#### GET `/auth/me`
 
-Get currently authenticated user details.
+Returns the currently authenticated user.
 
-**Headers:**
-```
-Authorization: Bearer <token>
-```
+---
+
+#### POST `/auth/logout`
+
+Invalidates the current session.
+
+---
+
+#### GET `/auth/counselors`
+
+Returns all active counselors including their `expertise` field. Used by teachers when assigning counselors.
 
 **Response (200):**
 ```json
 {
   "success": true,
-  "data": {
-    "id": "507f1f77bcf86cd799439011",
-    "name": "John Doe",
-    "email": "john@example.com",
-    "role": "teacher",
-    "phoneNumber": "+1234567890"
-  }
+  "count": 4,
+  "data": [
+    {
+      "_id": "507f1f77bcf86cd799439014",
+      "name": "Dr. Jane Smith",
+      "email": "jane@counselor.com",
+      "phoneNumber": "+911234567890",
+      "role": "counselor",
+      "expertise": "financial"
+    }
+  ]
 }
 ```
 
@@ -118,15 +122,9 @@ Authorization: Bearer <token>
 
 ### Student Endpoints
 
-#### 1. Add Student
-**POST** `/students`
+#### POST `/students`
 
-Add a new student (Teacher only).
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
+Add a new student with full multi-dimensional data (Teacher only).
 
 **Request Body:**
 ```json
@@ -134,192 +132,121 @@ Authorization: Bearer <token>
   "name": "Alice Johnson",
   "rollNumber": "CS2024001",
   "email": "alice@student.com",
-  "phoneNumber": "+1234567890",
+  "phoneNumber": "+911234567890",
+
   "attendancePercentage": 75,
   "internalMarks": 65,
   "assignmentCompletion": 80,
+  "previousFailures": 0,
+  "engagementScore": 70,
+
   "familyIncome": 45000,
   "travelDistance": 15,
-  "previousFailures": 0,
-  "engagementScore": 70
+  "scholarshipStatus": "partial",
+  "partTimeJob": false,
+  "numberOfDependents": 1,
+
+  "disciplinaryActions": 0,
+  "socialMediaHours": 3,
+  "extracurricularParticipation": true,
+
+  "hasChronicIllness": false,
+  "mentalHealthConcern": false,
+  "missedDueMedical": 0
 }
 ```
 
-**Response (201):**
-```json
-{
-  "success": true,
-  "message": "Student added successfully",
-  "data": {
-    "_id": "507f1f77bcf86cd799439012",
-    "name": "Alice Johnson",
-    "rollNumber": "CS2024001",
-    "attendancePercentage": 75,
-    "internalMarks": 65,
-    "teacherId": "507f1f77bcf86cd799439011",
-    "createdAt": "2024-01-15T10:30:00.000Z"
-  }
-}
-```
+**Field Reference:**
+
+| Field | Type | Category | Required | Notes |
+|-------|------|----------|----------|-------|
+| name | String | Identity | ✅ | |
+| rollNumber | String | Identity | ✅ | Auto-uppercased |
+| email | String | Identity | ❌ | Creates student login if provided |
+| phoneNumber | String | Identity | ❌ | |
+| attendancePercentage | Number | Academic | ✅ | 0–100 |
+| internalMarks | Number | Academic | ✅ | 0–100 |
+| assignmentCompletion | Number | Academic | ✅ | 0–100 |
+| previousFailures | Number | Academic | ✅ | Default: 0 |
+| engagementScore | Number | Academic | ✅ | 0–100 |
+| familyIncome | Number | Financial | ✅ | Annual, in ₹ |
+| travelDistance | Number | Financial | ✅ | One-way km |
+| scholarshipStatus | String | Financial | ❌ | `none`/`partial`/`full`, default: `none` |
+| partTimeJob | Boolean | Financial | ❌ | Default: false |
+| numberOfDependents | Number | Financial | ❌ | Default: 0 |
+| disciplinaryActions | Number | Behavioural | ❌ | Default: 0 |
+| socialMediaHours | Number | Behavioural | ❌ | Hours/day, default: 0 |
+| extracurricularParticipation | Boolean | Behavioural | ❌ | Default: false |
+| hasChronicIllness | Boolean | Medical | ❌ | Default: false |
+| mentalHealthConcern | Boolean | Medical | ❌ | Default: false |
+| missedDueMedical | Number | Medical | ❌ | Days, default: 0 |
 
 ---
 
-#### 2. Get All Students
-**GET** `/students`
+#### GET `/students`
 
-Get all students (filtered by role).
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Query Parameters:**
-- None (automatic filtering based on user role)
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "count": 25,
-  "data": [
-    {
-      "_id": "507f1f77bcf86cd799439012",
-      "name": "Alice Johnson",
-      "rollNumber": "CS2024001",
-      "attendancePercentage": 75,
-      "riskScore": 30,
-      "riskLevel": "low",
-      "teacherId": {
-        "_id": "507f1f77bcf86cd799439011",
-        "name": "John Doe",
-        "email": "john@example.com"
-      },
-      "createdAt": "2024-01-15T10:30:00.000Z"
-    }
-  ]
-}
-```
+Returns students filtered by role:
+- Teacher: all students they added + registered student users
+- Counselor: only assigned students
+- Student: own record only
 
 ---
 
-#### 3. Get Single Student
-**GET** `/students/:id`
+#### GET `/students/:id`
 
-Get student by ID.
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "data": {
-    "_id": "507f1f77bcf86cd799439012",
-    "name": "Alice Johnson",
-    "rollNumber": "CS2024001",
-    "email": "alice@student.com",
-    "phoneNumber": "+1234567890",
-    "attendancePercentage": 75,
-    "internalMarks": 65,
-    "assignmentCompletion": 80,
-    "familyIncome": 45000,
-    "travelDistance": 15,
-    "previousFailures": 0,
-    "engagementScore": 70,
-    "riskScore": 30,
-    "riskLevel": "low",
-    "recommendation": "Student is on track.",
-    "teacherId": {
-      "_id": "507f1f77bcf86cd799439011",
-      "name": "John Doe"
-    }
-  }
-}
-```
+Returns a single student by ID with all fields populated.
 
 ---
 
-#### 4. Update Student
-**PUT** `/students/:id`
+#### PUT `/students/:id`
 
-Update student information (Teacher only).
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Request Body:**
-```json
-{
-  "attendancePercentage": 80,
-  "internalMarks": 70,
-  "engagementScore": 75
-}
-```
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "Student updated successfully",
-  "data": {
-    "_id": "507f1f77bcf86cd799439012",
-    "name": "Alice Johnson",
-    "attendancePercentage": 80,
-    "internalMarks": 70,
-    "engagementScore": 75
-  }
-}
-```
+Update any student field (Teacher only). Accepts partial updates.
 
 ---
 
-#### 5. Delete Student
-**DELETE** `/students/:id`
+#### DELETE `/students/:id`
 
-Delete a student (Teacher only).
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "Student deleted successfully"
-}
-```
+Delete a student record (Teacher only).
 
 ---
 
-#### 6. Upload CSV Dataset
-**POST** `/students/upload-csv`
+#### POST `/students/upload-csv`
 
 Bulk upload students via CSV (Teacher only).
 
-**Headers:**
+**Headers:** `Content-Type: multipart/form-data`
+
+**CSV Column Reference:**
+
 ```
-Authorization: Bearer <token>
-Content-Type: multipart/form-data
+Required:
+  name, rollNumber
+
+Academic (optional, default 0):
+  attendancePercentage, internalMarks, assignmentCompletion,
+  previousFailures, engagementScore
+
+Financial (optional):
+  familyIncome, travelDistance, scholarshipStatus (none/partial/full),
+  partTimeJob (true/false/yes/1), numberOfDependents
+
+Behavioural (optional):
+  disciplinaryActions, socialMediaHours,
+  extracurricularParticipation (true/false/yes/1)
+
+Medical (optional):
+  hasChronicIllness (true/false), mentalHealthConcern (true/false),
+  missedDueMedical
+
+Identity (optional):
+  email, phoneNumber
 ```
 
-**Request Body (Form Data):**
-```
-file: <csv_file>
-```
-
-**CSV Format:**
+**Example CSV row:**
 ```csv
-name,rollNumber,attendancePercentage,internalMarks,assignmentCompletion,familyIncome,travelDistance,previousFailures,engagementScore
-Alice Johnson,CS2024001,75,65,80,45000,15,0,70
-Bob Smith,CS2024002,45,35,30,25000,25,2,25
+name,rollNumber,attendancePercentage,internalMarks,assignmentCompletion,previousFailures,engagementScore,familyIncome,travelDistance,scholarshipStatus,partTimeJob,numberOfDependents,disciplinaryActions,socialMediaHours,extracurricularParticipation,hasChronicIllness,mentalHealthConcern,missedDueMedical
+Alice Johnson,CS2024001,75,65,80,0,70,45000,15,partial,false,1,0,3,true,false,false,0
+Bob Smith,CS2024002,40,30,35,2,25,80000,35,none,true,3,2,6,false,false,true,8
 ```
 
 **Response (201):**
@@ -327,29 +254,41 @@ Bob Smith,CS2024002,45,35,30,25000,25,2,25
 {
   "success": true,
   "message": "15 students added successfully",
-  "data": [
-    {
-      "_id": "507f1f77bcf86cd799439012",
-      "name": "Alice Johnson",
-      "rollNumber": "CS2024001"
-    }
-  ]
+  "data": [...]
 }
 ```
 
 ---
 
+#### POST `/students/:id/score-history`
+
+Add a term-based score snapshot for historical tracking.
+
+**Request Body:**
+```json
+{
+  "term": "Semester 1 2025",
+  "attendancePercentage": 75,
+  "internalMarks": 65,
+  "assignmentCompletion": 80,
+  "engagementScore": 70,
+  "previousFailures": 0
+}
+```
+
+---
+
+#### GET `/students/:id/score-history`
+
+Returns all score snapshots for a student, sorted newest first.
+
+---
+
 ### Prediction Endpoints
 
-#### 1. Run Prediction
-**POST** `/predict/:studentId`
+#### POST `/predict/:studentId`
 
-Run dropout prediction for a student (Teacher only).
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
+Run dropout prediction for a student (Teacher only). Uses all 19 fields for scoring.
 
 **Response (200):**
 ```json
@@ -361,34 +300,44 @@ Authorization: Bearer <token>
       "_id": "507f1f77bcf86cd799439012",
       "name": "Alice Johnson",
       "rollNumber": "CS2024001",
-      "riskScore": 85,
+      "riskScore": 72,
       "riskLevel": "high",
-      "recommendation": "Immediate counseling intervention recommended."
+      "riskFactors": [
+        "[Financial] Very low family income (below ₹1L)",
+        "[Financial] Working part-time job (time conflict risk)",
+        "[Academic] Poor attendance (below 70%)"
+      ],
+      "counselorType": "financial",
+      "recommendation": "Immediate counseling intervention recommended..."
     },
     "prediction": {
-      "riskScore": 85,
+      "riskScore": 72,
       "riskLevel": "high",
-      "recommendation": "Immediate counseling intervention recommended.",
-      "source": "ml_api"
+      "riskFactors": ["[Financial] Very low family income (below ₹1L)", "..."],
+      "counselorType": "financial",
+      "recommendation": "Immediate counseling intervention recommended...",
+      "source": "fallback"
     }
   }
 }
 ```
 
+**`counselorType` values:** `academic` | `financial` | `behavioral` | `medical` | `general`
+
+**`source` values:** `ml_api` (external Python model) | `fallback` (internal weighted engine)
+
+**Auto-assignment on high risk:**
+When `riskLevel` is `high`, the system automatically:
+1. Finds a counselor whose `expertise` matches `counselorType`
+2. Falls back to `general` expertise, then any available counselor
+3. Creates a counseling record with risk factor summary
+4. Sends notifications to teacher, counselor, and student
+
 ---
 
-#### 2. Get All Predictions
-**GET** `/predictions`
+#### GET `/predict`
 
-Get all prediction records (Teacher only).
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Query Parameters:**
-- `limit`: Number of records (default: 100)
+Get all prediction records made by the authenticated teacher (last 100).
 
 **Response (200):**
 ```json
@@ -397,19 +346,14 @@ Authorization: Bearer <token>
   "count": 50,
   "data": [
     {
-      "_id": "507f1f77bcf86cd799439013",
-      "studentId": {
-        "_id": "507f1f77bcf86cd799439012",
-        "name": "Alice Johnson",
-        "rollNumber": "CS2024001"
-      },
-      "riskScore": 85,
+      "_id": "...",
+      "studentId": { "name": "Alice Johnson", "rollNumber": "CS2024001" },
+      "riskScore": 72,
       "riskLevel": "high",
-      "predictionDate": "2024-01-15T11:00:00.000Z",
-      "predictedBy": {
-        "_id": "507f1f77bcf86cd799439011",
-        "name": "John Doe"
-      }
+      "riskFactors": ["[Financial] Very low family income (below ₹1L)"],
+      "counselorType": "financial",
+      "predictionDate": "2026-03-19T11:00:00.000Z",
+      "predictedBy": { "name": "John Doe" }
     }
   ]
 }
@@ -417,50 +361,17 @@ Authorization: Bearer <token>
 
 ---
 
-#### 3. Get Student Predictions
-**GET** `/predictions/student/:studentId`
+#### GET `/predict/student/:studentId`
 
 Get all predictions for a specific student.
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "count": 3,
-  "data": [
-    {
-      "_id": "507f1f77bcf86cd799439013",
-      "riskScore": 85,
-      "riskLevel": "high",
-      "predictionDate": "2024-01-15T11:00:00.000Z",
-      "inputData": {
-        "attendancePercentage": 45,
-        "internalMarks": 35,
-        "engagementScore": 25
-      }
-    }
-  ]
-}
-```
 
 ---
 
 ### Counseling Endpoints
 
-#### 1. Assign Counselor
-**POST** `/counseling/assign`
+#### POST `/counseling/assign`
 
-Assign a counselor to a student (Teacher only).
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
+Manually assign a counselor to a student (Teacher only).
 
 **Request Body:**
 ```json
@@ -470,194 +381,52 @@ Authorization: Bearer <token>
 }
 ```
 
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "Counselor assigned successfully",
-  "data": {
-    "_id": "507f1f77bcf86cd799439015",
-    "studentId": "507f1f77bcf86cd799439012",
-    "counselorId": "507f1f77bcf86cd799439014",
-    "status": "pending",
-    "assignedDate": "2024-01-15T12:00:00.000Z"
-  }
-}
-```
+---
+
+#### GET `/counseling/assigned`
+
+Get all students assigned to the authenticated counselor (Counselor only).
 
 ---
 
-#### 2. Get Assigned Students
-**GET** `/counseling/assigned`
+#### GET `/counseling/student/:studentId`
 
-Get all students assigned to counselor (Counselor only).
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "count": 5,
-  "data": [
-    {
-      "_id": "507f1f77bcf86cd799439015",
-      "studentId": {
-        "_id": "507f1f77bcf86cd799439012",
-        "name": "Alice Johnson",
-        "rollNumber": "CS2024001",
-        "riskScore": 85,
-        "riskLevel": "high"
-      },
-      "status": "in_progress",
-      "sessionCount": 2,
-      "lastSessionDate": "2024-01-14T10:00:00.000Z"
-    }
-  ]
-}
-```
+Get all counseling records for a student including notes.
 
 ---
 
-#### 3. Get Student Counseling
-**GET** `/counseling/student/:studentId`
+#### POST `/counseling/notes`
 
-Get counseling details for a student.
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "count": 1,
-  "data": [
-    {
-      "_id": "507f1f77bcf86cd799439015",
-      "studentId": {
-        "name": "Alice Johnson",
-        "rollNumber": "CS2024001"
-      },
-      "counselorId": {
-        "name": "Dr. Emily Chen",
-        "email": "emily@counselor.com"
-      },
-      "status": "in_progress",
-      "notes": [
-        {
-          "_id": "507f1f77bcf86cd799439016",
-          "content": "Initial session completed. Student expressing academic difficulties.",
-          "addedBy": {
-            "name": "Dr. Emily Chen",
-            "role": "counselor"
-          },
-          "addedAt": "2024-01-10T14:00:00.000Z"
-        }
-      ],
-      "sessionCount": 2
-    }
-  ]
-}
-```
-
----
-
-#### 4. Add Counseling Note
-**POST** `/counseling/notes`
-
-Add a counseling session note (Counselor only).
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
+Add a session note (Counselor only).
 
 **Request Body:**
 ```json
 {
   "counselingId": "507f1f77bcf86cd799439015",
-  "note": "Follow-up session. Student showing improvement in attendance."
-}
-```
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "Note added successfully",
-  "data": {
-    "_id": "507f1f77bcf86cd799439015",
-    "notes": [
-      {
-        "_id": "507f1f77bcf86cd799439017",
-        "content": "Follow-up session. Student showing improvement.",
-        "addedBy": {
-          "name": "Dr. Emily Chen",
-          "role": "counselor"
-        },
-        "addedAt": "2024-01-15T14:00:00.000Z"
-      }
-    ],
-    "sessionCount": 3
-  }
+  "note": "Follow-up session. Student exploring financial aid options."
 }
 ```
 
 ---
 
-#### 5. Update Counseling Status
-**PUT** `/counseling/:id/status`
+#### PUT `/counseling/:id/status`
 
 Update counseling status (Counselor only).
 
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
 **Request Body:**
 ```json
-{
-  "status": "resolved"
-}
+{ "status": "in_progress" }
 ```
 
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "Status updated successfully",
-  "data": {
-    "_id": "507f1f77bcf86cd799439015",
-    "status": "resolved",
-    "resolvedDate": "2024-01-15T15:00:00.000Z"
-  }
-}
-```
+`status` values: `pending` | `in_progress` | `resolved`
 
 ---
 
 ### Notification Endpoints
 
-#### 1. Get Notifications
-**GET** `/notifications`
+#### GET `/notifications`
 
-Get all notifications for current user.
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Query Parameters:**
-- `status`: Filter by status (`unread` or `read`)
-- `limit`: Number of records (default: 50)
+Get all notifications for the current user.
 
 **Response (200):**
 ```json
@@ -667,17 +436,12 @@ Authorization: Bearer <token>
   "unreadCount": 3,
   "data": [
     {
-      "_id": "507f1f77bcf86cd799439018",
-      "message": "High-risk student detected: Alice Johnson (Risk Score: 85)",
+      "_id": "...",
+      "message": "High-risk student: Alice Johnson (72). Primary: financial. Counselor Dr. Jane [financial] assigned.",
       "type": "risk",
       "status": "unread",
       "priority": "high",
-      "relatedStudentId": {
-        "_id": "507f1f77bcf86cd799439012",
-        "name": "Alice Johnson",
-        "rollNumber": "CS2024001"
-      },
-      "createdAt": "2024-01-15T11:00:00.000Z"
+      "createdAt": "2026-03-19T11:00:00.000Z"
     }
   ]
 }
@@ -685,195 +449,100 @@ Authorization: Bearer <token>
 
 ---
 
-#### 2. Get Unread Count
-**GET** `/notifications/unread-count`
+#### GET `/notifications/unread-count`
 
-Get count of unread notifications.
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "count": 3
-}
-```
+Returns `{ "success": true, "count": 3 }`.
 
 ---
 
-#### 3. Mark as Read
-**PUT** `/notifications/:id/read`
+#### PUT `/notifications/:id/read`
 
-Mark a notification as read.
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "Notification marked as read",
-  "data": {
-    "_id": "507f1f77bcf86cd799439018",
-    "status": "read"
-  }
-}
-```
+Mark a single notification as read.
 
 ---
 
-#### 4. Mark All as Read
-**PUT** `/notifications/read-all`
+#### PUT `/notifications/read-all`
 
 Mark all notifications as read.
 
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "5 notifications marked as read",
-  "count": 5
-}
-```
-
 ---
 
-#### 5. Delete Notification
-**DELETE** `/notifications/:id`
+#### DELETE `/notifications/:id`
 
 Delete a notification.
 
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "Notification deleted successfully"
-}
-```
-
 ---
 
-## 🔒 Authentication & Authorization
-
-### JWT Token Structure
-
-```json
-{
-  "id": "507f1f77bcf86cd799439011",
-  "iat": 1642252800,
-  "exp": 1644844800
-}
-```
-
-### Role-Based Access
+## 🔒 Role-Based Access Control
 
 | Endpoint | Teacher | Student | Counselor |
 |----------|---------|---------|-----------|
 | POST /students | ✅ | ❌ | ❌ |
-| GET /students | ✅ (all) | ✅ (own) | ✅ (assigned) |
-| POST /predict/:id | ✅ | ❌ | ❌ |
+| GET /students | ✅ (all own) | ✅ (own) | ✅ (assigned) |
+| PUT /students/:id | ✅ | ❌ | ❌ |
+| DELETE /students/:id | ✅ | ❌ | ❌ |
+| POST /students/upload-csv | ✅ | ❌ | ❌ |
+| POST /predict/:studentId | ✅ | ❌ | ❌ |
+| GET /predict | ✅ | ❌ | ❌ |
 | POST /counseling/assign | ✅ | ❌ | ❌ |
 | GET /counseling/assigned | ❌ | ❌ | ✅ |
 | POST /counseling/notes | ❌ | ❌ | ✅ |
+| PUT /counseling/:id/status | ❌ | ❌ | ✅ |
 | GET /notifications | ✅ | ✅ | ✅ |
+| GET /auth/counselors | ✅ | ❌ | ❌ |
 
 ---
 
 ## ❌ Error Responses
 
-### Common Error Codes
-
-**400 Bad Request:**
-```json
-{
-  "success": false,
-  "message": "Please provide all required student information"
-}
-```
-
-**401 Unauthorized:**
-```json
-{
-  "success": false,
-  "message": "Not authorized to access this route. Please login."
-}
-```
-
-**403 Forbidden:**
-```json
-{
-  "success": false,
-  "message": "User role 'student' is not authorized to access this route"
-}
-```
-
-**404 Not Found:**
-```json
-{
-  "success": false,
-  "message": "Student not found"
-}
-```
-
-**500 Internal Server Error:**
-```json
-{
-  "success": false,
-  "message": "Error adding student",
-  "error": "Database connection failed"
-}
-```
+| Code | Meaning | Example message |
+|------|---------|-----------------|
+| 400 | Bad Request | "Please provide all required student information" |
+| 401 | Unauthorized | "Not authorized to access this route. Please login." |
+| 403 | Forbidden | "User role 'student' is not authorized to access this route" |
+| 404 | Not Found | "Student not found" |
+| 500 | Server Error | "Error running prediction" |
 
 ---
 
-## 🧪 Testing with Postman/cURL
-
-### Example: Login and Get Students
+## 🧪 Quick Test with cURL
 
 ```bash
 # 1. Login
 curl -X POST https://eduguard-ai-1.onrender.com/api/auth/login \
   -H "Content-Type: application/json" \
+  -d '{"email":"teacher@demo.com","password":"password"}'
+
+# 2. Add student with all dimensions
+curl -X POST https://eduguard-ai-1.onrender.com/api/students \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
   -d '{
-    "email": "teacher@demo.com",
-    "password": "password"
+    "name":"Bob Smith","rollNumber":"CS2024002",
+    "attendancePercentage":40,"internalMarks":30,
+    "assignmentCompletion":35,"previousFailures":2,"engagementScore":25,
+    "familyIncome":80000,"travelDistance":35,
+    "scholarshipStatus":"none","partTimeJob":true,"numberOfDependents":3,
+    "disciplinaryActions":2,"socialMediaHours":6,"extracurricularParticipation":false,
+    "hasChronicIllness":false,"mentalHealthConcern":true,"missedDueMedical":8
   }'
 
-# Response will include token
-
-# 2. Get Students
-curl -X GET https://eduguard-ai-1.onrender.com/api/students \
-  -H "Authorization: Bearer <your_token_here>"
+# 3. Run prediction
+curl -X POST https://eduguard-ai-1.onrender.com/api/predict/<studentId> \
+  -H "Authorization: Bearer <token>"
 ```
 
 ---
 
 ## 📝 Notes
 
-- All timestamps are in ISO 8601 format (UTC)
-- All numeric IDs are MongoDB ObjectIds
-- File uploads accept only CSV format
-- Maximum file size: 10 MB
+- All timestamps are ISO 8601 (UTC)
+- All IDs are MongoDB ObjectIds
+- CSV uploads accept only `.csv` files, max 10 MB
 - Rate limit: 100 requests per 15 minutes per IP
+- ML API fallback is always available if external Python service is unreachable
 
 ---
 
-**API Version**: 1.0.0  
+**API Version**: 2.0.0
 **Last Updated**: March 2026

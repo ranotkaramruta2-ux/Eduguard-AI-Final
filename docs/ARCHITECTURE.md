@@ -13,537 +13,427 @@
 │                                                                          │
 │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐     │
 │  │  Teacher Portal  │  │  Student Portal  │  │ Counselor Portal │     │
-│  │   (React.js)     │  │   (React.js)     │  │   (React.js)     │     │
+│  │   (React + TS)   │  │   (React + TS)   │  │   (React + TS)   │     │
 │  └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘     │
-│           │                     │                      │                │
 │           └─────────────────────┴──────────────────────┘                │
 │                                 │                                        │
 │                         ┌───────▼───────┐                               │
 │                         │  Socket.io    │                               │
 │                         │  Connection   │                               │
 │                         └───────┬───────┘                               │
-└─────────────────────────────────┼─────────────────────────────────────┘
-                                  │
-                                  │ HTTPS/WSS
-                                  │
-┌─────────────────────────────────▼─────────────────────────────────────┐
-│                         APPLICATION LAYER                              │
+└─────────────────────────────────┼───────────────────────────────────────┘
+                                  │ HTTPS / WSS
+┌─────────────────────────────────▼───────────────────────────────────────┐
+│                         APPLICATION LAYER                                │
+├──────────────────────────────────────────────────────────────────────────┤
+│                                                                           │
+│  ┌────────────────────────────────────────────────────────────────┐     │
+│  │                    Express.js Server                            │     │
+│  │  ┌────────────┐  ┌────────────┐  ┌────────────────────────┐  │     │
+│  │  │   Routes   │  │Controllers │  │      Middleware         │  │     │
+│  │  │ auth       │  │ auth       │  │ authMiddleware (JWT)    │  │     │
+│  │  │ students   │  │ student    │  │ roleMiddleware (RBAC)   │  │     │
+│  │  │ predict    │  │ prediction │  │ errorHandler            │  │     │
+│  │  │ counseling │  │ counseling │  └────────────────────────┘  │     │
+│  │  │ notify     │  │ notify     │                               │     │
+│  │  │ behavioural│  │ behavioural│                               │     │
+│  │  └────────────┘  └─────┬──────┘                               │     │
+│  │                        │                                        │     │
+│  │        ┌───────────────▼───────────────┐                       │     │
+│  │        │         Services / Utils      │                       │     │
+│  │        │  mlPredictionService.js       │                       │     │
+│  │        │  csvUploadService.js          │                       │     │
+│  │        │  twilioService.js             │                       │     │
+│  │        │  helpers.js (risk engine)     │                       │     │
+│  │        │  csvParser.js                 │                       │     │
+│  │        └───────────────┬───────────────┘                       │     │
+│  └────────────────────────┼────────────────────────────────────────┘     │
+│                           │                                               │
+│           ┌───────────────┼───────────────┐                              │
+│           │               │               │                              │
+│  ┌────────▼────────┐ ┌───▼───────┐ ┌────▼──────────┐                   │
+│  │   Socket.io     │ │  Twilio   │ │  ML Service   │                   │
+│  │   Real-time     │ │    SMS    │ │ (Python API)  │                   │
+│  │  Notifications  │ │  Gateway  │ │  + Fallback   │                   │
+│  └─────────────────┘ └───────────┘ └───────────────┘                   │
+└─────────────────────────────────────┬─────────────────────────────────┘
+                                      │
+┌─────────────────────────────────────▼─────────────────────────────────┐
+│                           DATA LAYER                                   │
 ├────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
-│  ┌──────────────────────────────────────────────────────────────┐     │
-│  │                    Express.js Server                          │     │
-│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐            │     │
-│  │  │   Routes   │  │Controllers │  │ Middleware │            │     │
-│  │  └─────┬──────┘  └─────┬──────┘  └─────┬──────┘            │     │
-│  │        │               │               │                     │     │
-│  │        └───────────────┴───────────────┘                     │     │
-│  │                        │                                      │     │
-│  │        ┌───────────────▼───────────────┐                     │     │
-│  │        │      Business Logic           │                     │     │
-│  │        │  ┌──────────┐  ┌───────────┐ │                     │     │
-│  │        │  │ Services │  │   Utils   │ │                     │     │
-│  │        │  └──────────┘  └───────────┘ │                     │     │
-│  │        └───────────────┬───────────────┘                     │     │
-│  └────────────────────────┼─────────────────────────────────────┘     │
-│                           │                                             │
-│           ┌───────────────┼───────────────┐                            │
-│           │               │               │                            │
-│  ┌────────▼────────┐ ┌───▼───────┐ ┌────▼──────────┐                 │
-│  │   Socket.io     │ │ Twilio    │ │  ML Service   │                 │
-│  │   Real-time     │ │ SMS/WhatsApp││  (Python API) │                 │
-│  │  Notifications  │ │   Gateway  │ │               │                 │
-│  └─────────────────┘ └────────────┘ └───────────────┘                 │
-│                                                                         │
-└─────────────────────────────────────┬───────────────────────────────┘
-                                      │
-                                      │
-┌─────────────────────────────────────▼───────────────────────────────┐
-│                           DATA LAYER                                 │
-├──────────────────────────────────────────────────────────────────────┤
-│                                                                       │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │                     MongoDB Database                          │   │
-│  │  ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐ │   │
-│  │  │ Users  │  │Students│  │Predictions│Counseling││Notifications│
-│  │  │Collection│Collection│  │Collection│Collection││Collection││   │
-│  │  └────────┘  └────────┘  └────────┘  └────────┘  └────────┘ │   │
-│  └──────────────────────────────────────────────────────────────┘   │
-│                                                                       │
-└───────────────────────────────────────────────────────────────────────┘
+│  ┌─────────────────────────────────────────────────────────────────┐  │
+│  │                     MongoDB Database                             │  │
+│  │  ┌────────┐  ┌──────────┐  ┌────────────┐  ┌────────────────┐  │  │
+│  │  │ Users  │  │ Students │  │Predictions │  │   Counseling   │  │  │
+│  │  │+expert.│  │+19 fields│  │+riskFactors│  │   +notes[]     │  │  │
+│  │  └────────┘  └──────────┘  │+counselorT.│  └────────────────┘  │  │
+│  │                             └────────────┘                       │  │
+│  │  ┌──────────────────┐  ┌──────────────────┐                     │  │
+│  │  │  Notifications   │  │BehaviouralFeedback│                    │  │
+│  │  └──────────────────┘  └──────────────────┘                     │  │
+│  └─────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## 🧩 Component Architecture
 
-### 1. **Frontend Architecture (React)**
+### Frontend (React + TypeScript)
 
 ```
-frontend/
-├── src/
-│   ├── components/
-│   │   ├── common/              # Reusable UI components
-│   │   │   ├── Button.tsx
-│   │   │   ├── Card.tsx
-│   │   │   ├── Input.tsx
-│   │   │   └── Modal.tsx
-│   │   ├── layout/              # Layout components
-│   │   │   ├── AppSidebar.tsx
-│   │   │   ├── TopNavbar.tsx
-│   │   │   └── DashboardLayout.tsx
-│   │   └── features/            # Feature-specific components
-│   │       ├── StudentCard.tsx
-│   │       ├── RiskBadge.tsx
-│   │       └── CounselingForm.tsx
-│   ├── pages/
-│   │   ├── teacher/             # Teacher-specific pages
-│   │   ├── student/             # Student-specific pages
-│   │   └── counselor/           # Counselor-specific pages
-│   ├── contexts/                # React Context for state
-│   │   ├── AuthContext.tsx
-│   │   └── DataContext.tsx
-│   ├── hooks/                   # Custom React hooks
-│   ├── utils/                   # Utility functions
-│   └── lib/                     # Third-party configurations
+src/
+├── components/
+│   ├── AppSidebar.tsx          # Role-aware navigation sidebar
+│   ├── DashboardLayout.tsx     # Shared layout wrapper
+│   ├── RiskBadge.tsx           # Colour-coded risk level badge
+│   ├── StatCard.tsx            # Dashboard metric card
+│   ├── TopNavbar.tsx           # Top navigation bar
+│   ├── ProtectedRoute.tsx      # Auth + role guard
+│   └── ui/                     # Shadcn UI primitives
+│
+├── pages/
+│   ├── auth/
+│   │   ├── LoginPage.tsx
+│   │   └── RegisterPage.tsx    # Expertise selector for counselors
+│   ├── teacher/
+│   │   ├── TeacherDashboard.tsx        # Risk distribution + high-risk list with factors
+│   │   ├── StudentListPage.tsx         # Table with risk factors, counselorType, assign dialog
+│   │   ├── AddStudentPage.tsx          # 4-section form (Academic/Financial/Behavioural/Medical)
+│   │   ├── RunPredictionPage.tsx       # Categorised factor breakdown + counselor type badge
+│   │   ├── UploadDatasetPage.tsx       # CSV upload with updated format guide
+│   │   ├── BehaviouralFeedbackPage.tsx
+│   │   └── StudentScoreHistoryPage.tsx
+│   ├── counselor/
+│   │   ├── CounselorDashboard.tsx
+│   │   ├── CounselingSessionPage.tsx
+│   │   └── AssignedStudentsPage.tsx
+│   └── student/
+│       └── StudentDashboard.tsx
+│
+├── contexts/
+│   ├── AuthContext.tsx          # register() accepts expertise param
+│   └── DataContext.tsx          # mapStudent() maps all 19 fields + counselorType
+│
+├── lib/
+│   └── api.ts                   # StudentData + PredictionResult include new fields
+│
+└── utils/
+    └── constants.ts             # Student interface includes all new fields
 ```
 
-### 2. **Backend Architecture (Node.js + Express)**
+### Backend (Node.js + Express)
 
 ```
-backend/
-├── src/
-│   ├── controllers/             # Request handlers
-│   │   ├── authController.js    → Handle authentication
-│   │   ├── studentController.js → Handle student CRUD
-│   │   ├── predictionController.js → Handle predictions
-│   │   ├── counselingController.js → Handle counseling
-│   │   └── notificationController.js → Handle notifications
-│   ├── routes/                  # API route definitions
-│   │   ├── authRoutes.js        → /api/auth/*
-│   │   ├── studentRoutes.js     → /api/students/*
-│   │   ├── predictionRoutes.js  → /api/predict/*
-│   │   ├── counselingRoutes.js  → /api/counseling/*
-│   │   └── notificationRoutes.js → /api/notifications/*
-│   ├── models/                  # MongoDB schemas
-│   │   ├── User.js
-│   │   ├── Student.js
-│   │   ├── Prediction.js
-│   │   ├── Counseling.js
-│   │   └── Notification.js
-│   ├── services/                # Business logic services
-│   │   ├── mlPredictionService.js  → ML API integration
-│   │   ├── twilioService.js        → SMS/WhatsApp
-│   │   └── csvUploadService.js     → CSV processing
-│   ├── middleware/              # Custom middleware
-│   │   ├── authMiddleware.js    → JWT verification
-│   │   ├── roleMiddleware.js    → RBAC checks
-│   │   └── errorHandler.js      → Error handling
-│   ├── config/                  # Configuration files
-│   │   ├── db.js                → MongoDB connection
-│   │   └── twilio.js            → Twilio config
-│   ├── utils/                   # Utility functions
-│   │   ├── helpers.js           → Risk calculation
-│   │   ├── logger.js            → Logging utility
-│   │   └── csvParser.js         → CSV parsing
-│   ├── app.js                   # Express app setup
-│   └── server.js                # Server entry point
-```
-
----
-
-## 🔄 Request Flow
-
-### 1. **Authentication Flow**
-
-```
-┌────────┐                                                      ┌────────┐
-│ Client │                                                      │ Server │
-└───┬────┘                                                      └───┬────┘
-    │                                                               │
-    │ 1. POST /api/auth/login                                      │
-    │    { email, password }                                       │
-    ├──────────────────────────────────────────────────────────────▶
-    │                                                               │
-    │                      2. Validate credentials                 │
-    │                         - Check email exists                 │
-    │                         - Compare password hash              │
-    │                         - Check account active               │
-    │                                                               │
-    │                      3. Generate JWT token                   │
-    │                         - Payload: { id, role }              │
-    │                         - Sign with secret                   │
-    │                         - Set expiration                     │
-    │                                                               │
-    │ 4. Return response                                           │
-    │    { success, user, token }                                  │
-    ◀──────────────────────────────────────────────────────────────┤
-    │                                                               │
-    │ 5. Store token in localStorage                               │
-    │    Include in future requests:                               │
-    │    Authorization: Bearer <token>                             │
-    │                                                               │
-```
-
-### 2. **Prediction Workflow**
-
-```
-┌─────────┐        ┌─────────┐        ┌──────────┐        ┌──────────┐
-│ Teacher │        │ Express │        │   ML     │        │ MongoDB  │
-│ Client  │        │  Server │        │ Service  │        │ Database │
-└────┬────┘        └────┬────┘        └────┬─────┘        └────┬─────┘
-     │                  │                  │                    │
-     │ 1. POST /api/predict/:studentId    │                    │
-     ├─────────────────▶│                  │                    │
-     │                  │                  │                    │
-     │                  │ 2. Authenticate & Authorize           │
-     │                  │    (JWT + Role Check)                 │
-     │                  │                  │                    │
-     │                  │ 3. Fetch student data                 │
-     │                  ├────────────────────────────────────────▶
-     │                  │                  │                    │
-     │                  │◀────────────────────────────────────────┤
-     │                  │ Student data     │                    │
-     │                  │                  │                    │
-     │                  │ 4. Call ML API   │                    │
-     │                  ├─────────────────▶│                    │
-     │                  │                  │ 5. Calculate risk  │
-     │                  │                  │    score & level   │
-     │                  │                  │                    │
-     │                  │ 6. Return prediction                  │
-     │                  │◀─────────────────┤                    │
-     │                  │                  │                    │
-     │                  │ 7. Update student record              │
-     │                  ├────────────────────────────────────────▶
-     │                  │                  │                    │
-     │                  │ 8. Save prediction record             │
-     │                  ├────────────────────────────────────────▶
-     │                  │                  │                    │
-     │                  │ 9. IF HIGH RISK:                      │
-     │                  │    - Find counselor                   │
-     │                  │    - Assign to student                │
-     │                  │    - Create counseling record         │
-     │                  │    - Send notifications               │
-     │                  │                  │                    │
-     │ 10. Return success response         │                    │
-     │◀─────────────────┤                  │                    │
-     │                  │                  │                    │
-```
-
-### 3. **Real-time Notification Flow**
-
-```
-┌────────────┐        ┌────────────┐        ┌──────────────┐
-│   Client   │        │  Socket.io │        │   MongoDB    │
-│ (Teacher)  │        │   Server   │        │   Database   │
-└─────┬──────┘        └─────┬──────┘        └──────┬───────┘
-      │                     │                       │
-      │ 1. Connect to Socket.io                    │
-      ├────────────────────▶│                       │
-      │                     │                       │
-      │ 2. Emit 'join' event with userId           │
-      ├────────────────────▶│                       │
-      │                     │ 3. Join user room     │
-      │                     │    (user_<userId>)    │
-      │                     │                       │
-      │ 4. High-risk student detected              │
-      │                     │                       │
-      │                     │ 5. Save notification  │
-      │                     ├──────────────────────▶│
-      │                     │                       │
-      │                     │ 6. Emit to user room  │
-      │ 7. Receive notification                    │
-      │◀────────────────────┤                       │
-      │ { message, type, studentId }               │
-      │                     │                       │
-      │ 8. Display alert in UI                     │
-      │                     │                       │
+backend/src/
+├── controllers/
+│   ├── authController.js        # register() accepts expertise; getCounselors() returns it
+│   ├── studentController.js     # addStudent() handles all 19 fields; uploadCSV updated
+│   ├── predictionController.js  # saves riskFactors + counselorType; smart auto-assign
+│   ├── counselingController.js
+│   ├── notificationController.js
+│   └── behaviouralFeedbackController.js
+│
+├── models/
+│   ├── User.js                  # + expertise: enum[academic,financial,behavioral,medical,general]
+│   ├── Student.js               # + 9 new fields (financial/behavioural/medical) + counselorType
+│   ├── Prediction.js            # + riskFactors[], counselorType
+│   ├── Counseling.js
+│   ├── Notification.js
+│   └── BehaviouralFeedback.js
+│
+├── services/
+│   ├── mlPredictionService.js   # passes all 19 fields; returns riskFactors + counselorType
+│   ├── csvUploadService.js      # multer config
+│   └── twilioService.js
+│
+├── utils/
+│   ├── helpers.js               # calculateRiskScore() + getRiskFactors() (4-category engine)
+│   ├── csvParser.js             # validateStudentCSV() handles all 19 fields + booleans
+│   └── logger.js
+│
+├── middleware/
+│   ├── authMiddleware.js
+│   ├── roleMiddleware.js
+│   └── errorHandler.js
+│
+├── config/
+│   ├── db.js
+│   └── twilio.js
+│
+├── routes/                      # Express routers
+├── app.js
+└── server.js
 ```
 
 ---
 
-## 🗄️ Database Architecture
+## 🔄 Key Flows
 
-### Collection Relationships
+### Prediction & Auto-Assignment Flow
 
 ```
-┌──────────────┐
-│    Users     │
-│   (1 to N)   │
-└──────┬───────┘
-       │
-       │ teacherId / counselorId / userId
-       │
-       ├──────────────────┬──────────────────┬──────────────────┐
-       │                  │                  │                  │
-       ▼                  ▼                  ▼                  ▼
-┌──────────────┐   ┌──────────────┐   ┌──────────────┐   ┌──────────────┐
-│   Students   │   │ Predictions  │   │  Counseling  │   │Notifications │
-└──────┬───────┘   └──────────────┘   └──────────────┘   └──────────────┘
-       │
-       │ studentId
-       │
-       └──────────────────┬──────────────────┐
-                          │                  │
-                          ▼                  ▼
-                   ┌──────────────┐   ┌──────────────┐
-                   │ Predictions  │   │  Counseling  │
-                   └──────────────┘   └──────────────┘
+Teacher clicks "Analyze"
+        │
+        ▼
+POST /api/predict/:studentId
+        │
+        ├─ Fetch student (all 19 fields)
+        │
+        ├─ mlPredictionService.getPrediction()
+        │       ├─ Try external ML API (Python/XGBoost)
+        │       │       └─ On failure → fallback
+        │       └─ Fallback: calculateRiskScore() + getRiskFactors()
+        │               ├─ Academic score  (max 55 pts)
+        │               ├─ Financial score (max 20 pts)
+        │               ├─ Behavioural score (max 15 pts)
+        │               └─ Medical score   (max 10 pts)
+        │
+        ├─ Returns: { riskScore, riskLevel, riskFactors[], counselorType, recommendation }
+        │
+        ├─ Update Student: riskScore, riskLevel, riskFactors, counselorType, recommendation
+        ├─ Save Prediction record
+        │
+        └─ IF riskLevel === 'high':
+                ├─ Find counselor where expertise === counselorType
+                ├─ Fallback: expertise === 'general'
+                ├─ Fallback: any active counselor
+                ├─ Assign counselor to student
+                ├─ Create Counseling record (with factor summary in initial note)
+                ├─ Create Notifications (teacher + counselor + student)
+                ├─ Emit Socket.io events
+                └─ Send SMS via Twilio
 ```
 
-### Indexes for Performance
+### Risk Scoring Engine (`helpers.js`)
 
+```
+getRiskFactors(studentData) returns:
+  {
+    factors: string[],        // e.g. ["[Financial] Very low family income", ...]
+    counselorType: string,    // dominant category
+    breakdown: {
+      academic: string[],
+      financial: string[],
+      behavioral: string[],
+      medical: string[]
+    }
+  }
+
+Scoring weights:
+  Academic  (55 pts max):
+    attendance < 50%      → 20 pts
+    attendance < 70%      → 12 pts
+    attendance < 85%      →  5 pts
+    marks < 40            → 15 pts
+    marks < 60            →  8 pts
+    marks < 75            →  3 pts
+    assignment < 40%      → 10 pts
+    assignment < 60%      →  5 pts
+    failures ≥ 3          → 10 pts
+    failures ≥ 1          →  5 pts
+    engagement < 30       → 10 pts
+    engagement < 50       →  6 pts
+    engagement < 70       →  2 pts
+
+  Financial (20 pts max):
+    income < 1L           →  8 pts
+    income < 2L           →  4 pts
+    no scholarship + low income → 4 pts
+    partTimeJob           →  4 pts
+    dependents ≥ 3        →  4 pts
+    dependents ≥ 1        →  2 pts
+    travel > 30 km        →  3 pts
+    travel > 15 km        →  1 pt
+
+  Behavioural (15 pts max):
+    disciplinary ≥ 3      →  8 pts
+    disciplinary ≥ 1      →  4 pts
+    socialMedia ≥ 6 hrs   →  5 pts
+    socialMedia ≥ 4 hrs   →  2 pts
+    no extracurricular    →  2 pts
+
+  Medical (10 pts max):
+    mentalHealthConcern   →  5 pts
+    hasChronicIllness     →  3 pts
+    missedMedical ≥ 10    →  5 pts
+    missedMedical ≥ 5     →  3 pts
+    missedMedical ≥ 2     →  1 pt
+
+counselorType = category with highest weighted score
+```
+
+### CSV Upload Flow
+
+```
+Teacher uploads CSV
+        │
+        ▼
+POST /api/students/upload-csv (multipart/form-data)
+        │
+        ├─ multer saves file to /uploads/
+        ├─ parseCSVFile() → raw rows
+        ├─ validateStudentCSV():
+        │       ├─ Requires: name, rollNumber
+        │       ├─ numOrZero() for all numeric fields
+        │       ├─ toBool() for boolean fields (true/false/yes/1)
+        │       └─ scholarshipStatus validation (none/partial/full)
+        ├─ Student.insertMany() with teacherId
+        ├─ cleanupFile()
+        └─ Return count + data
+```
+
+---
+
+## 🗄️ Data Models
+
+### User
 ```javascript
-// Users Collection
-users.createIndex({ email: 1 }, { unique: true });
-users.createIndex({ role: 1 });
+{
+  name, email, password (bcrypt),
+  role: enum['teacher','student','counselor'],
+  phoneNumber,
+  expertise: enum['academic','financial','behavioral','medical','general'],
+  isActive
+}
+```
 
-// Students Collection
-students.createIndex({ rollNumber: 1 }, { unique: true });
-students.createIndex({ teacherId: 1 });
-students.createIndex({ counselorId: 1 });
-students.createIndex({ riskLevel: 1 });
+### Student (19 data fields)
+```javascript
+{
+  // Identity
+  name, rollNumber, email, phoneNumber,
+  teacherId, userId, counselorId, counselingStatus,
 
-// Predictions Collection
-predictions.createIndex({ studentId: 1 });
-predictions.createIndex({ riskLevel: 1 });
-predictions.createIndex({ predictionDate: -1 });
+  // Academic
+  attendancePercentage, internalMarks, assignmentCompletion,
+  previousFailures, engagementScore,
 
-// Counseling Collection
-counseling.createIndex({ studentId: 1 });
-counseling.createIndex({ counselorId: 1 });
-counseling.createIndex({ status: 1 });
+  // Financial
+  familyIncome, travelDistance,
+  scholarshipStatus: enum['none','partial','full'],
+  partTimeJob: Boolean,
+  numberOfDependents,
 
-// Notifications Collection
-notifications.createIndex({ userId: 1, status: 1 });
-notifications.createIndex({ createdAt: -1 });
-notifications.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // TTL
+  // Behavioural
+  disciplinaryActions, socialMediaHours,
+  extracurricularParticipation: Boolean,
+
+  // Medical
+  hasChronicIllness: Boolean,
+  mentalHealthConcern: Boolean,
+  missedDueMedical,
+
+  // Prediction results
+  riskScore, riskLevel: enum['low','medium','high'],
+  riskFactors: [String],
+  counselorType: enum['academic','financial','behavioral','medical','general'],
+  recommendation,
+
+  // History
+  scoreHistory: [{ term, attendancePercentage, internalMarks, ... }]
+}
+```
+
+### Prediction
+```javascript
+{
+  studentId, predictedBy,
+  riskScore, riskLevel,
+  riskFactors: [String],
+  counselorType: enum['academic','financial','behavioral','medical','general'],
+  recommendation,
+  inputData: { all 19 fields snapshot },
+  predictionDate, modelVersion
+}
+```
+
+### Counseling
+```javascript
+{
+  studentId, counselorId,
+  status: enum['pending','in_progress','resolved'],
+  notes: [{ content, addedBy, addedAt }],
+  sessionCount, assignedDate, resolvedDate, lastSessionDate
+}
 ```
 
 ---
 
 ## 🔐 Security Architecture
 
-### Multi-Layer Security
-
 ```
-┌────────────────────────────────────────────────────────────────────┐
-│                         Layer 1: Network                            │
-│  • HTTPS/TLS encryption                                             │
-│  • CORS policy enforcement                                          │
-│  • Rate limiting (100 req/15 min)                                   │
-└────────────────────────────────────────────────────────────────────┘
-                                 │
-                                 ▼
-┌────────────────────────────────────────────────────────────────────┐
-│                      Layer 2: Authentication                        │
-│  • JWT token validation                                             │
-│  • Token expiration (30 days)                                       │
-│  • Password hashing (bcrypt, 10 rounds)                             │
-└────────────────────────────────────────────────────────────────────┘
-                                 │
-                                 ▼
-┌────────────────────────────────────────────────────────────────────┐
-│                      Layer 3: Authorization                         │
-│  • Role-based access control                                        │
-│  • Resource ownership validation                                    │
-│  • Permission checks per route                                      │
-└────────────────────────────────────────────────────────────────────┘
-                                 │
-                                 ▼
-┌────────────────────────────────────────────────────────────────────┐
-│                       Layer 4: Data Validation                      │
-│  • Input sanitization                                               │
-│  • Schema validation (Mongoose)                                     │
-│  • File type validation (CSV only)                                  │
-│  • Size limits (10 MB)                                              │
-└────────────────────────────────────────────────────────────────────┘
-                                 │
-                                 ▼
-┌────────────────────────────────────────────────────────────────────┐
-│                      Layer 5: Error Handling                        │
-│  • Graceful error responses                                         │
-│  • No sensitive data in errors                                      │
-│  • Logging without credentials                                      │
-└────────────────────────────────────────────────────────────────────┘
+Layer 1 — Network:      HTTPS/TLS, CORS, Rate limiting (100 req/15 min)
+Layer 2 — Auth:         JWT validation, bcrypt (10 rounds), token expiry
+Layer 3 — Authorization: RBAC per route, resource ownership checks
+Layer 4 — Data:         Mongoose schema validation, CSV type/size checks
+Layer 5 — Errors:       Graceful responses, no sensitive data leaked
 ```
 
 ---
 
-## 📡 API Architecture
-
-### RESTful API Design
+## 📡 API Surface
 
 ```
-Base URL: https://eduguard-ai-1.onrender.com/api
+/api/auth
+  POST   /register          → accepts expertise for counselors
+  POST   /login
+  GET    /me
+  POST   /logout
+  GET    /counselors         → returns expertise field
+  GET    /students
 
-Authentication: Bearer Token
-Content-Type: application/json
+/api/students
+  POST   /                  → all 19 fields
+  GET    /
+  GET    /:id
+  PUT    /:id               → all 19 fields
+  DELETE /:id
+  POST   /upload-csv        → updated CSV parser
+  POST   /:id/score-history
+  GET    /:id/score-history
 
-┌─────────────────────────────────────────────────────────────────┐
-│ Resource          │ Method │ Endpoint                          │
-├───────────────────┼────────┼───────────────────────────────────┤
-│ Authentication    │ POST   │ /api/auth/register                │
-│                   │ POST   │ /api/auth/login                   │
-│                   │ GET    │ /api/auth/me                      │
-│                   │ POST   │ /api/auth/logout                  │
-├───────────────────┼────────┼───────────────────────────────────┤
-│ Students          │ POST   │ /api/students                     │
-│                   │ GET    │ /api/students                     │
-│                   │ GET    │ /api/students/:id                 │
-│                   │ PUT    │ /api/students/:id                 │
-│                   │ DELETE │ /api/students/:id                 │
-│                   │ POST   │ /api/students/upload-csv          │
-├───────────────────┼────────┼───────────────────────────────────┤
-│ Predictions       │ POST   │ /api/predict/:studentId           │
-│                   │ GET    │ /api/predictions                  │
-│                   │ GET    │ /api/predictions/student/:id      │
-├───────────────────┼────────┼───────────────────────────────────┤
-│ Counseling        │ POST   │ /api/counseling/assign            │
-│                   │ GET    │ /api/counseling/assigned          │
-│                   │ GET    │ /api/counseling/student/:id       │
-│                   │ POST   │ /api/counseling/notes             │
-│                   │ PUT    │ /api/counseling/:id/status        │
-├───────────────────┼────────┼───────────────────────────────────┤
-│ Notifications     │ GET    │ /api/notifications                │
-│                   │ GET    │ /api/notifications/unread-count   │
-│                   │ PUT    │ /api/notifications/:id/read       │
-│                   │ PUT    │ /api/notifications/read-all       │
-│                   │ DELETE │ /api/notifications/:id            │
-└───────────────────┴────────┴───────────────────────────────────┘
-```
+/api/predict
+  POST   /:studentId        → returns riskFactors + counselorType
+  GET    /
+  GET    /student/:studentId
 
----
+/api/counseling
+  POST   /assign
+  GET    /assigned
+  GET    /student/:studentId
+  POST   /notes
+  PUT    /:id/status
 
-## 🚀 Deployment Architecture
+/api/notifications
+  GET    /
+  GET    /unread-count
+  PUT    /:id/read
+  PUT    /read-all
+  DELETE /:id
 
-### Production Deployment
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         Load Balancer                            │
-│                    (Nginx / Cloud LB)                            │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-           ┌───────────────┼───────────────┐
-           │               │               │
-           ▼               ▼               ▼
-    ┌──────────┐    ┌──────────┐    ┌──────────┐
-    │ Node.js  │    │ Node.js  │    │ Node.js  │
-    │ Server 1 │    │ Server 2 │    │ Server 3 │
-    │   PM2    │    │   PM2    │    │   PM2    │
-    └────┬─────┘    └────┬─────┘    └────┬─────┘
-         │               │               │
-         └───────────────┼───────────────┘
-                         │
-                         ▼
-              ┌──────────────────┐
-              │  MongoDB Atlas   │
-              │  Replica Set     │
-              │  (3 nodes)       │
-              └──────────────────┘
-
-┌────────────────────────────────────────────────────────────┐
-│                    External Services                        │
-├────────────────────────────────────────────────────────────┤
-│  • Twilio API (SMS/WhatsApp)                               │
-│  • ML API (Python Flask/FastAPI)                           │
-│  • Monitoring (New Relic, Datadog)                         │
-│  • Logging (CloudWatch, Loggly)                            │
-└────────────────────────────────────────────────────────────┘
+/api/behavioural-feedback
+  POST   /
+  GET    /student/:studentId
+  PUT    /:id
+  DELETE /:id
 ```
 
 ---
 
-## 🔧 Configuration Management
-
-### Environment-Based Configuration
+## 🚀 Deployment
 
 ```
-Development:
-  • Local MongoDB
-  • Debug logging
-  • No rate limiting
-  • CORS: *
-  • ML fallback enabled
-
-Staging:
-  • Staging MongoDB
-  • Info logging
-  • Rate limiting: 500/15min
-  • CORS: staging domain
-  • ML API integration
-
-Production:
-  • MongoDB Atlas
-  • Error logging only
-  • Rate limiting: 100/15min
-  • CORS: production domain
-  • ML API with fallback
-  • HTTPS enforced
-  • Monitoring enabled
+Frontend:  Vite build → static hosting (Vercel / Netlify / S3+CloudFront)
+Backend:   Node.js + PM2 → Render / Railway / EC2
+Database:  MongoDB Atlas (replica set)
+ML API:    Python Flask/FastAPI → separate service (optional)
+           Fallback engine always active if ML API unreachable
 ```
 
 ---
 
-## 📊 Scalability Considerations
-
-### Horizontal Scaling
-
-```
-Current: Single server deployment
-Future: Multi-server with load balancing
-
-Strategies:
-1. Stateless API design (JWT tokens)
-2. MongoDB connection pooling
-3. Redis for session management
-4. CDN for static assets
-5. Microservices for ML (separate service)
-6. Message queue for async tasks (Bull/RabbitMQ)
-7. Caching layer (Redis/Memcached)
-```
-
-### Vertical Scaling
-
-```
-Server Resources:
-- CPU: 2-4 cores (current) → 8-16 cores (peak)
-- RAM: 4-8 GB (current) → 16-32 GB (peak)
-- Storage: 50 GB SSD (current) → 500 GB SSD (peak)
-
-Database:
-- MongoDB: Shared cluster → Dedicated cluster
-- Connections: 10-20 → 100-500
-- Indexes: Optimized for queries
-```
-
----
-
-## 🔍 Monitoring & Logging
-
-### Application Monitoring
-
-```
-Metrics to Track:
-- API response times
-- Request success/failure rates
-- Database query performance
-- Memory usage
-- CPU utilization
-- Error rates
-- Active connections
-- Prediction accuracy
-
-Tools:
-- PM2 monitoring
-- MongoDB Atlas monitoring
-- New Relic APM
-- Datadog
-- Custom logging (Winston)
-```
-
----
-
-**Architecture Version**: 1.0  
-**Last Updated**: March 2026  
+**Architecture Version**: 2.0
+**Last Updated**: March 2026
 **Status**: Production Ready
